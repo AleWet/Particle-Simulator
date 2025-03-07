@@ -32,8 +32,8 @@ public:
     void AddParticleGrid(int rows, int cols, const glm::vec2& bottomLeft, const glm::vec2& topRight,
         const glm::vec2& spacing, float mass = 1.0f);
 
-    const std::vector<Particle>& GetParticles() const { return m_Particles; }
-    std::vector<Particle>& GetParticles() { return m_Particles; }
+    const std::vector<Particle>& GetParticles() const { return m_Particles; } // THIS ONE IS JUST OT COPY 
+    std::vector<Particle>& GetParticles() { return m_Particles; } // THIS ONE IS TO MODIFY THE VECTORIT
 
     const std::vector<glm::vec2> GetBounds() const
     {

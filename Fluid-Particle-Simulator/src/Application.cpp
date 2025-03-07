@@ -18,11 +18,159 @@
 #include "Shader.h"
 #include "Texture.h"
 #include "core/Time.h"
+#include "ParticleRenderer.h"
 
 #include "physics/SimulationSystem.h"
+#include "physics/Physics.h"
 
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
+
+// Add this function to your Application.cpp or create a separate file
+void RenderSimulationFrame(const SimulationSystem& sim, const glm::mat4& viewMatrix)
+{
+    // Create a simple shader for rendering particles
+    static GLuint shaderProgram = 0;
+    static GLint mvpLocation = -1;
+
+    // Initialize the shader if it doesn't exist
+    if (shaderProgram == 0) {
+        // Create an inline shader since we don't want to depend on external files
+        const char* vertexShaderSource = R"(
+            #version 330 core
+            layout(location = 0) in vec2 position;
+            
+            uniform mat4 u_MVP;
+            
+            void main()
+            {
+                gl_Position = u_MVP * vec4(position, 0.0, 1.0);
+                gl_PointSize = 5.0; // Fixed point size
+            }
+        )";
+
+        const char* fragmentShaderSource = R"(
+            #version 330 core
+            out vec4 color;
+            
+            void main()
+            {
+                // Simple circle shape with soft edges
+                vec2 circCoord = 2.0 * gl_PointCoord - 1.0;
+                float circleShape = 1.0 - smoothstep(0.0, 1.0, length(circCoord));
+                
+                // Blue particles
+                color = vec4(0.2, 0.4, 0.8, circleShape);
+                if (circleShape < 0.1) discard; // Discard pixels outside the circle
+            }
+        )";
+
+        // Create and compile vertex shader
+        GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+        GLCall(glShaderSource(vertexShader, 1, &vertexShaderSource, nullptr));
+        GLCall(glCompileShader(vertexShader));
+
+        // Check vertex shader compilation
+        GLint success;
+        GLCall(glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success));
+        if (!success) {
+            char infoLog[512];
+            GLCall(glGetShaderInfoLog(vertexShader, 512, nullptr, infoLog));
+            std::cerr << "Vertex shader compilation failed: " << infoLog << std::endl;
+            return;
+        }
+
+        // Create and compile fragment shader
+        GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+        GLCall(glShaderSource(fragmentShader, 1, &fragmentShaderSource, nullptr));
+        GLCall(glCompileShader(fragmentShader));
+
+        // Check fragment shader compilation
+        GLCall(glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success));
+        if (!success) {
+            char infoLog[512];
+            GLCall(glGetShaderInfoLog(fragmentShader, 512, nullptr, infoLog));
+            std::cerr << "Fragment shader compilation failed: " << infoLog << std::endl;
+            return;
+        }
+
+        // Create and link shader program
+        shaderProgram = glCreateProgram();
+        GLCall(glAttachShader(shaderProgram, vertexShader));
+        GLCall(glAttachShader(shaderProgram, fragmentShader));
+        GLCall(glLinkProgram(shaderProgram));
+
+        // Check program linking
+        GLCall(glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success));
+        if (!success) {
+            char infoLog[512];
+            GLCall(glGetProgramInfoLog(shaderProgram, 512, nullptr, infoLog));
+            std::cerr << "Shader program linking failed: " << infoLog << std::endl;
+            return;
+        }
+
+        // Delete the shaders as they're linked into our program now and no longer necessary
+        GLCall(glDeleteShader(vertexShader));
+        GLCall(glDeleteShader(fragmentShader));
+
+        // Get the location of the MVP uniform
+        mvpLocation = glGetUniformLocation(shaderProgram, "u_MVP");
+        if (mvpLocation == -1) {
+            std::cerr << "Warning: Couldn't find uniform 'u_MVP' in shader program" << std::endl;
+        }
+    }
+
+    // Get particles from simulation
+    const std::vector<Particle>& particles = sim.GetParticles();
+
+    // Create a simple vertex buffer with just positions
+    std::vector<float> vertexData;
+    vertexData.reserve(particles.size() * 2); // 2 floats per particle (x, y)
+
+    for (const auto& p : particles) {
+        vertexData.push_back(p.position.x);
+        vertexData.push_back(p.position.y);
+    }
+
+    // Create and bind a vertex array
+    GLuint vao;
+    GLCall(glGenVertexArrays(1, &vao));
+    GLCall(glBindVertexArray(vao));
+
+    // Create and bind a vertex buffer
+    GLuint vbo;
+    GLCall(glGenBuffers(1, &vbo));
+    GLCall(glBindBuffer(GL_ARRAY_BUFFER, vbo));
+    GLCall(glBufferData(GL_ARRAY_BUFFER, vertexData.size() * sizeof(float), vertexData.data(), GL_STATIC_DRAW));
+
+    // Define vertex attributes
+    GLCall(glEnableVertexAttribArray(0));
+    GLCall(glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0));
+
+    // Clear the screen
+    GLCall(glClearColor(0.1f, 0.1f, 0.1f, 1.0f)); // Dark background
+    GLCall(glClear(GL_COLOR_BUFFER_BIT));
+
+    // Use shader program directly
+    GLCall(glUseProgram(shaderProgram));
+
+    // Set the MVP uniform
+    GLCall(glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, &viewMatrix[0][0]));
+
+    // Draw particles as points
+    GLCall(glEnable(GL_PROGRAM_POINT_SIZE)); // Enable point size in shader
+    GLCall(glDrawArrays(GL_POINTS, 0, particles.size()));
+
+    // Cleanup
+    GLCall(glDisable(GL_PROGRAM_POINT_SIZE));
+    GLCall(glBindVertexArray(0));
+    GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));
+    GLCall(glUseProgram(0));
+
+    // Delete temporary resources
+    GLCall(glDeleteBuffers(1, &vbo));
+    GLCall(glDeleteVertexArrays(1, &vao));
+}
 
 int main(void)
 {
@@ -110,18 +258,38 @@ int main(void)
         // Specify bleding function
         GLCall(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
 
+        std::string shaderPath = "res/shaders/ParticleShader.shader";
+
+        // First check if the shader file exists
+        std::ifstream fileCheck(shaderPath);
+        if (!fileCheck.good()) {
+            std::cerr << "Error: Cannot open shader file: " << shaderPath << std::endl;
+            // Handle the error - maybe set a flag or throw an exception
+            return 0;
+        }
+        
+
+        //initialzie particle renderer
+        //ParticleRenderer renderer(stocazzoPath);
+
         // Initialize counter for fps 
         int counter = 0;
 
         // Main loop
         while (!glfwWindowShouldClose(window))
         {
-
+            // update physics before rendering
             int steps = timeManager.update();
             for (int i = 0; i < steps; i++)
             {
-                //updateSimulationPhyisics();
+                UpdatePhysics(sim, timeManager.getFixedDeltaTime());
             }
+
+            //renderer.update(sim.GetParticles());
+
+            //renderer.render(sim.GetViewMatrix(zoom, aspectRatio));
+
+            RenderSimulationFrame(sim, sim.GetViewMatrix(zoom, aspectRatio));
 
             // Display FPS
             if (++counter > 1000)
