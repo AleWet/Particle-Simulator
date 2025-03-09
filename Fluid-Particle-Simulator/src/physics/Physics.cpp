@@ -34,21 +34,21 @@ void UpdatePhysics(SimulationSystem& sim, float deltaTime)
         // Horizontal bounds check
         if (curParticle.position.x < bottomLeft.x) {
             curParticle.position.x = bottomLeft.x;
-            curParticle.velocity.x *= -1.0f;  // Bounce with some energy loss
+            curParticle.velocity.x *= -1.0f;  // 100% elastic
         }
         else if (curParticle.position.x > topRight.x) {
             curParticle.position.x = topRight.x;
-            curParticle.velocity.x *= -1.0f;  // Bounce with some energy loss
+            curParticle.velocity.x *= -1.0f;  // 100% elastic
         }
 
         // Vertical bounds check
         if (curParticle.position.y < bottomLeft.y) {
             curParticle.position.y = bottomLeft.y;
-            curParticle.velocity.y *= -1.0f;  // Bounce with some energy loss
+            curParticle.velocity.y *= -1.0f;  // 100% elastic
         }
         else if (curParticle.position.y > topRight.y) {
             curParticle.position.y = topRight.y;
-            curParticle.velocity.y *= -1.0f;  // Bounce with some energy loss
+            curParticle.velocity.y *= -1.0f;  // 100% elastic
         }
 
         // Add a small amount of temperature for fast-moving particles kinda like friction 

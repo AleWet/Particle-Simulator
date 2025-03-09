@@ -179,7 +179,7 @@ glm::mat4 SimulationSystem::GetViewMatrix() const
     return view;
 }
 
-float SimulationSystem::GetParticleRenderSize(float pixelDistance) const
+float SimulationSystem::GetParticleRenderSize() const
 {
     // Calculate the simulation width in simulation units
     float simWidth = m_topRight.x - m_bottomLeft.x;
@@ -193,5 +193,5 @@ float SimulationSystem::GetParticleRenderSize(float pixelDistance) const
     float scale = viewWidth / static_cast<float>(m_WindowWidth);
 
     // Convert pixel distance to simulation distance
-    return pixelDistance * scale;
+    return m_ParticleRadius * scale;
 }

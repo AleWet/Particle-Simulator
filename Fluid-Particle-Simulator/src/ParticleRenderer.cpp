@@ -108,7 +108,7 @@ void ParticleRenderer::UpdateBuffers()
     m_VertexArray->AddBuffer(*m_VertexBuffer, layout);
 }
 
-void ParticleRenderer::Render(const SimulationSystem& sim)
+void ParticleRenderer::Render()
 {
     // No particles to render
     if (m_Simulation.GetParticles().empty()) {
@@ -116,7 +116,7 @@ void ParticleRenderer::Render(const SimulationSystem& sim)
     }
 
     // Create MVP for particles
-    glm::mat4 particleMVP = sim.GetProjMatrix() * sim.GetViewMatrix();
+    glm::mat4 particleMVP = m_Simulation.GetProjMatrix() * m_Simulation.GetViewMatrix();
     
     // Bind shader and set uniforms
     m_Shader.Bind();
@@ -124,8 +124,9 @@ void ParticleRenderer::Render(const SimulationSystem& sim)
     m_Shader.setUniformMat4f("u_MVP", particleMVP);
 
     // Set uniform to scale up particle radius to expected size
-    // Account for the fact gl_PointSize expects the diameter, not the radius ==> double it
-    float pointSizeScale = sim.GetParticleRenderSize(sim.GetParticleRadius()) * 2.0f;
+    // Account for the fact gl_PointSize expects the diameter in pixels, not the radius ==> double it
+    // this part of the code needs to be re-done
+    float pointSizeScale = m_Simulation.GetParticleRenderSize() * 2.0f;
     m_Shader.setUniform1f("u_PointSizeScale", pointSizeScale);
 
     // Bind vertex array

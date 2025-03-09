@@ -64,7 +64,7 @@ int main(void)
 
         // SIMULATION PARAMETERS ----------------------------------------------------------
          
-
+        // // GENERAL : 
 
         // Set up simulation boundaries based on screen coordinates
         // I'll use normalized device coordinates for simplicity, then scale with view matrix
@@ -74,7 +74,6 @@ int main(void)
         float simWidth = 200.0f;  
 
         // Particle size (in simulation units) ==> this size is relative to the simulation units
-        // there is a bug with this because this is not the actual rendered size, this is just for the physics at the moment
         unsigned int particleRadius = 5.0f;
         
         // Make simulation rectangle the same ratio of the screen for simplicity
@@ -91,8 +90,10 @@ int main(void)
         float zoom = 0.5f;
 
         // Add particles in a grid pattern 
-        int rows = 3;
-        int cols = 3;
+        int rows = 10;
+        int cols = 10;
+
+        // // PARTICLE CREATION
         
         // Set particle grid coordinates, this creates a rectangle that will be moved to the center of the simulation,
         // At the moment the rectangle is centered in the origin ==> it will also be in the center of the simulation
@@ -102,6 +103,8 @@ int main(void)
         // Space between particles
         glm::vec2 spacing(0.0f, 0.0f);           
         float particleMass = 1.0f;
+
+        // // BORDER 
 
         // Set border rendering parameters
         glm::vec4 simBorderColor(1.0f, 1.0f, 1.0f, 0.5f); // White
@@ -128,10 +131,11 @@ int main(void)
         std::string shaderPath = "res/shaders/ParticleShader.shader";
 
         // First check if the shader file exists
+        // this in the future will be inside the shader (maybe)
         if (!IsShaderPathOk(shaderPath)) 
             return 0;
 
-        // initialize shader outside of renderer (easier and more flexible)
+        // initialize shader outside of renderer (easier but not permanent)
         Shader shader(shaderPath);
 
         // Bind shader
@@ -151,7 +155,7 @@ int main(void)
         {
             // Clear the screen
             GLCall(glClear(GL_COLOR_BUFFER_BIT));
-            GLCall(glClearColor(0.0f, 0.0f, 0.0f, 1.0f));  // Dark background
+            GLCall(glClearColor(0.0f, 0.0f, 0.0f, 1.0f));  // Black background
 
             // Set zoom for simulation
             sim.SetZoom(zoom);
@@ -166,8 +170,8 @@ int main(void)
             // Update buffers with new particle data
             renderer.UpdateBuffers();
 
-            // Render the particles with the view matrix
-            renderer.Render(sim);
+            // Render the particles 
+            renderer.Render();
 
             // Render simulation borders
             // This implementation isn't the best, this should be inside 

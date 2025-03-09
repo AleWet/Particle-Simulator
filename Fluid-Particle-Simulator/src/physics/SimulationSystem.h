@@ -5,10 +5,11 @@
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 
+// Object to control the simulation
 class SimulationSystem
 {
 private:
-    std::vector<Particle> m_Particles;
+    std::vector<Particle> m_Particles;     
     glm::vec2 m_bottomLeft;  
     glm::vec2 m_topRight;    
     unsigned int m_ParticleRadius;
@@ -56,11 +57,12 @@ public:
 
     float GetParticleRadius() const { return m_ParticleRadius; }
 
-    // Convert a distance in screen pixels to simulation units
-    // pixelDistance: Distance in screen pixels
-    float GetParticleRenderSize(float pixelDistance) const;
+    // Convert a particle radius in screen pixels to simulation units
+    // This helper function exists because OpenGL renders points as
+    // rectangles and uses the side in pixels.
+    float GetParticleRenderSize() const;
 
-    // return simulation zoom
+    // Return simulation zoom
     float GetZoom() const { return m_Zoom; }
 
     // Set the zoom level
@@ -69,10 +71,10 @@ public:
     // Return simulation heigth
     float GetSimHeight() const { return m_SimHeight; }
 
-    // return simulation width
+    // Return simulation width
     float GetSimWidth() const { return m_SimWidth; }
 
-    // return window width
+    // Return window width
     void SetWindowWidth(unsigned int width) { m_WindowWidth = width; }
 
 };
