@@ -114,7 +114,7 @@ int main(void)
 
 
         // Create simulation system
-        SimulationSystem sim(bottomLeft, topRight, particleRadius, WINDOW_WIDTH);
+        SimulationSystem sim(bottomLeft, topRight, particleRadius, WINDOW_WIDTH, simulationBorderOffset);
 
         sim.AddParticleGrid(rows, cols, gridBottomLeft, gridTopRight, spacing, particleMass);
        
@@ -156,9 +156,7 @@ int main(void)
             // Set zoom for simulation
             sim.SetZoom(zoom);
 
-            // create viewMatrix after setting the zoom
-            glm::mat4 viewMatrix = sim.GetViewMatrix(simulationBorderOffset);
-
+            glm::mat4 MVP = sim.GetProjMatrix() * sim.GetViewMatrix();
 
             // Update physics before rendering
             int steps = timeManager.update();
@@ -169,11 +167,13 @@ int main(void)
             renderer.UpdateBuffers();
 
             // Render the particles with the view matrix
-            renderer.Render(sim, viewMatrix);
+            renderer.Render(sim);
 
             // Render simulation borders
-            BoundsRenderer(sim.GetBounds()[0], sim.GetBounds()[1], borderWidth, simBorderColor, simulationBorderOffset, viewMatrix);
-            BoundsRenderer(gridBottomLeft, gridTopRight, borderWidth, gridBorderColor, 0, viewMatrix);
+            // This implementation isn't the best, this should be inside 
+            // the renderer object or the simulation system
+            BoundsRenderer(sim.GetBounds()[0], sim.GetBounds()[1], borderWidth, simBorderColor, simulationBorderOffset, MVP);
+            BoundsRenderer(gridBottomLeft, gridTopRight, borderWidth, gridBorderColor, 0, MVP);
 
             // Display FPS
             if (++counter > 100)

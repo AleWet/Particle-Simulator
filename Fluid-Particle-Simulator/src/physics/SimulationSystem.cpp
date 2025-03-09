@@ -2,9 +2,9 @@
 #include <iostream>
 #include <algorithm>
 
-SimulationSystem::SimulationSystem(const glm::vec2& bottomLeft, const glm::vec2& topRight, unsigned int particleRadius, unsigned int windowWidth)
+SimulationSystem::SimulationSystem(const glm::vec2& bottomLeft, const glm::vec2& topRight, unsigned int particleRadius, unsigned int windowWidth, float simulationBorderOffset)
     : m_bottomLeft(bottomLeft), m_topRight(topRight), m_ParticleRadius(particleRadius),
-    m_Zoom(1.0f), m_WindowWidth(windowWidth) 
+    m_Zoom(1.0f), m_WindowWidth(windowWidth), m_SimulationBorderOffSet(simulationBorderOffset)
 {
     m_SimHeight = std::abs(topRight.y - bottomLeft.y);
     m_SimWidth = std::abs(topRight.x - bottomLeft.x);
@@ -133,34 +133,50 @@ void SimulationSystem::AddParticleGrid(int rows, int cols, const glm::vec2& bott
     std::cout << "Created grid with " << rows << "x" << cols << " particles" << std::endl;
 }
 
-glm::mat4 SimulationSystem::GetViewMatrix(float simulationBorderOffset) const
+glm::mat4 SimulationSystem::GetProjMatrix() const
 {
-    // Calculate the width and height of the simulation
-    float simWidth = m_topRight.x - m_bottomLeft.x;
-    float simHeight = m_topRight.y - m_bottomLeft.y;
+    // Calculate the simulation boundaries
+    const float simWidth = m_topRight.x - m_bottomLeft.x;
+    const float simHeight = m_topRight.y - m_bottomLeft.y;
 
-    // caculate simulation ratio
-    float aspectRatio = m_SimWidth / m_SimHeight;
+    // Calculate the aspect ratio of the simulation space itself
+    const float simulationAspectRatio = simWidth / simHeight;
 
-    // Calculate the center of the simulation
-    glm::vec2 center = (m_topRight + m_bottomLeft) * 0.5f;
+    // Base projection dimensions on simulation's native aspect ratio
+    const float baseWidth = simWidth / m_Zoom;
+    const float baseHeight = baseWidth / simulationAspectRatio;
 
-    // ad y offest to create border between simulation and window
-    center.y -= simulationBorderOffset;
-
-    // Adjust for zoom factor
-    float viewWidth = simWidth / m_Zoom;
-    float viewHeight = viewWidth / aspectRatio;
-
-    // Create orthographic projection matrix centered on the simulation
-    glm::mat4 projection = glm::ortho(
-        center.x - viewWidth / 2, center.x + viewWidth / 2,   // left, right
-        center.y - viewHeight / 2, center.y + viewHeight / 2, // bottom, top
-        -1.0f, 1.0f                                           // near, far
+    // Create orthographic projection that matches the simulation's aspect ratio
+    return glm::ortho(
+        -baseWidth / 2.0f, baseWidth / 2.0f,  // Left/Right
+        -baseHeight / 2.0f, baseHeight / 2.0f,  // Bottom/Top
+        -1.0f, 1.0f                             // Near/Far (Z-clipping)
     );
+}
 
+glm::mat4 SimulationSystem::GetViewMatrix() const
+{
+    // Calculate simulation center point
+    const glm::vec2 simulationCenter = (m_topRight + m_bottomLeft) * 0.5f;
 
-    return projection;
+    // Create view transformation matrix
+    glm::mat4 view = glm::mat4(1.0f);
+
+    // Apply vertical offset to create top border
+    view = glm::translate(view, glm::vec3(
+        0.0f,                       // X: No horizontal translation
+        -m_SimulationBorderOffSet,  // Y: Move "camera" down to create top border
+        0.0f                        // Z: No depth translation
+    ));
+
+    // Center the view on the simulation area
+    view = glm::translate(view, glm::vec3(
+        -simulationCenter.x,  // Center X
+        -simulationCenter.y,  // Center Y
+        0.0f                  // Z remains unchanged
+    ));
+
+    return view;
 }
 
 float SimulationSystem::GetParticleRenderSize(float pixelDistance) const

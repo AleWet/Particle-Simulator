@@ -27,5 +27,5 @@ public:
     void UpdateBuffers();
 
     // Render the particles using the provided view matrix
-    void Render(const SimulationSystem& simulation, const glm::mat4& viewMatrix);
+    void Render(const SimulationSystem& simulation);
 };

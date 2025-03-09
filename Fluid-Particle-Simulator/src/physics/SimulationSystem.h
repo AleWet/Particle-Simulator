@@ -16,6 +16,7 @@ private:
     float m_SimHeight;
     float m_SimWidth;
     unsigned int m_WindowWidth;
+    float m_SimulationBorderOffSet;
 
 public:
     // bottomLeft is the bottom-left corner of the simulation rectangle and
@@ -23,7 +24,7 @@ public:
     // Initialize the size of a single particle 
     // Call this function once per simulation, calling it multiple times will delete previous simulation.
     // For the moment there are no visuals for bounds of the simulation
-    SimulationSystem(const glm::vec2& bottomLeft, const glm::vec2& topRight, unsigned int particleRadius, unsigned int windowWidth);
+    SimulationSystem(const glm::vec2& bottomLeft, const glm::vec2& topRight, unsigned int particleRadius, unsigned int windowWidth, float simulationBorderOffset);
     ~SimulationSystem();
 
     // add new particle to particle vector, default mass is 1.0f. 
@@ -47,11 +48,11 @@ public:
         return bounds;
     }
     
-    // Create a view matrix for rendering the simulation
-    // zoom: Zoom factor (1.0 = normal, >1.0 = zoom in, <1.0 = zoom out)
-    // aspectRatio: Window width / Window height.
-    // For the moment this is the only transformation needed
-    glm::mat4 GetViewMatrix(float simulationBorderOffset) const;
+    // Return projection matrix for rendering the simulation
+    glm::mat4 GetProjMatrix() const;
+
+    // Return a view matrix for the simulation
+    glm::mat4 GetViewMatrix() const;
 
     float GetParticleRadius() const { return m_ParticleRadius; }
 

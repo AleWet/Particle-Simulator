@@ -108,20 +108,20 @@ void ParticleRenderer::UpdateBuffers()
     m_VertexArray->AddBuffer(*m_VertexBuffer, layout);
 }
 
-void ParticleRenderer::Render(const SimulationSystem& sim, const glm::mat4& viewMatrix)
+void ParticleRenderer::Render(const SimulationSystem& sim)
 {
     // No particles to render
     if (m_Simulation.GetParticles().empty()) {
         return;
     }
 
-    // aspect ratio
-    // simulation borderd offset
-
+    // Create MVP for particles
+    glm::mat4 particleMVP = sim.GetProjMatrix() * sim.GetViewMatrix();
+    
     // Bind shader and set uniforms
     m_Shader.Bind();
     // For the moment the viewMatrix is the MVP matrix, the camera can't move
-    m_Shader.setUniformMat4f("u_MVP", viewMatrix); 
+    m_Shader.setUniformMat4f("u_MVP", particleMVP);
 
     // Set uniform to scale up particle radius to expected size
     // Account for the fact gl_PointSize expects the diameter, not the radius ==> double it
