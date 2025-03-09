@@ -23,7 +23,7 @@ public:
     // Initialize the size of a single particle 
     // Call this function once per simulation, calling it multiple times will delete previous simulation.
     // For the moment there are no visuals for bounds of the simulation
-    SimulationSystem(const glm::vec2& bottomLeft, const glm::vec2& topRight, unsigned int particleRadius);
+    SimulationSystem(const glm::vec2& bottomLeft, const glm::vec2& topRight, unsigned int particleRadius, unsigned int windowWidth);
     ~SimulationSystem();
 
     // add new particle to particle vector, default mass is 1.0f. 
@@ -51,30 +51,27 @@ public:
     // zoom: Zoom factor (1.0 = normal, >1.0 = zoom in, <1.0 = zoom out)
     // aspectRatio: Window width / Window height.
     // For the moment this is the only transformation needed
-    glm::mat4 GetViewMatrix(float aspectRatio, float simulationBorderOffset) const;
+    glm::mat4 GetViewMatrix(float simulationBorderOffset) const;
 
     float GetParticleRadius() const { return m_ParticleRadius; }
 
     // Convert a distance in screen pixels to simulation units
     // pixelDistance: Distance in screen pixels
-    float PixelToSimulationDistance(float pixelDistance) const;
+    float GetParticleRenderSize(float pixelDistance) const;
 
-    float GetZoom() const
-    {
-        return m_Zoom;
-    }
+    // return simulation zoom
+    float GetZoom() const { return m_Zoom; }
 
     // Set the zoom level
-    void SetZoom(float zoom)
-    {
-        m_Zoom = zoom;
-    }
+    void SetZoom(float zoom) { m_Zoom = zoom; }
 
+    // Return simulation heigth
     float GetSimHeight() const { return m_SimHeight; }
 
-    void SetWindowWidth(unsigned int width) {
-        m_WindowWidth = width;
-    }
-
+    // return simulation width
     float GetSimWidth() const { return m_SimWidth; }
+
+    // return window width
+    void SetWindowWidth(unsigned int width) { m_WindowWidth = width; }
+
 };

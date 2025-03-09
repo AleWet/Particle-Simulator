@@ -75,7 +75,7 @@ int main(void)
 
         // Particle size (in simulation units) ==> this size is relative to the simulation units
         // there is a bug with this because this is not the actual rendered size, this is just for the physics at the moment
-        unsigned int particleRadius = 15.0f;
+        unsigned int particleRadius = 5.0f;
         
         // Make simulation rectangle the same ratio of the screen for simplicity
         float simHeight = simWidth / aspectRatio; 
@@ -88,7 +88,7 @@ int main(void)
         float simulationBorderOffset = 10.0f;
 
         // Set zoom
-        float zoom = 0.8f;
+        float zoom = 0.5f;
 
         // Add particles in a grid pattern 
         int rows = 3;
@@ -114,16 +114,7 @@ int main(void)
 
 
         // Create simulation system
-        SimulationSystem sim(bottomLeft, topRight, particleRadius);
-
-        // set window width for simulation
-        sim.SetWindowWidth(WINDOW_WIDTH);
-
-        // set fixed view matrix (for the moment)
-        glm::mat4 viewMatrix = sim.GetViewMatrix(aspectRatio, simulationBorderOffset);
-
-        // Create time manager
-        Time timeManager(1.0f / 60.0f);
+        SimulationSystem sim(bottomLeft, topRight, particleRadius, WINDOW_WIDTH);
 
         sim.AddParticleGrid(rows, cols, gridBottomLeft, gridTopRight, spacing, particleMass);
        
@@ -149,6 +140,9 @@ int main(void)
         // initialize particle renderer
         ParticleRenderer renderer(sim, shader);
 
+        // Create time manager
+        Time timeManager(1.0f / 60.0f);
+
         // Initialize counter for fps 
         int counter = 0;
 
@@ -161,6 +155,10 @@ int main(void)
 
             // Set zoom for simulation
             sim.SetZoom(zoom);
+
+            // create viewMatrix after setting the zoom
+            glm::mat4 viewMatrix = sim.GetViewMatrix(simulationBorderOffset);
+
 
             // Update physics before rendering
             int steps = timeManager.update();

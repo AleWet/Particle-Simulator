@@ -2,9 +2,9 @@
 #include <iostream>
 #include <algorithm>
 
-SimulationSystem::SimulationSystem(const glm::vec2& bottomLeft, const glm::vec2& topRight, unsigned int particleRadius)
+SimulationSystem::SimulationSystem(const glm::vec2& bottomLeft, const glm::vec2& topRight, unsigned int particleRadius, unsigned int windowWidth)
     : m_bottomLeft(bottomLeft), m_topRight(topRight), m_ParticleRadius(particleRadius),
-    m_Zoom(1.0f), m_WindowWidth(800) // Default values
+    m_Zoom(1.0f), m_WindowWidth(windowWidth) 
 {
     m_SimHeight = std::abs(topRight.y - bottomLeft.y);
     m_SimWidth = std::abs(topRight.x - bottomLeft.x);
@@ -133,11 +133,14 @@ void SimulationSystem::AddParticleGrid(int rows, int cols, const glm::vec2& bott
     std::cout << "Created grid with " << rows << "x" << cols << " particles" << std::endl;
 }
 
-glm::mat4 SimulationSystem::GetViewMatrix(float aspectRatio, float simulationBorderOffset) const
+glm::mat4 SimulationSystem::GetViewMatrix(float simulationBorderOffset) const
 {
     // Calculate the width and height of the simulation
     float simWidth = m_topRight.x - m_bottomLeft.x;
     float simHeight = m_topRight.y - m_bottomLeft.y;
+
+    // caculate simulation ratio
+    float aspectRatio = m_SimWidth / m_SimHeight;
 
     // Calculate the center of the simulation
     glm::vec2 center = (m_topRight + m_bottomLeft) * 0.5f;
@@ -160,13 +163,15 @@ glm::mat4 SimulationSystem::GetViewMatrix(float aspectRatio, float simulationBor
     return projection;
 }
 
-float SimulationSystem::PixelToSimulationDistance(float pixelDistance) const
+float SimulationSystem::GetParticleRenderSize(float pixelDistance) const
 {
     // Calculate the simulation width in simulation units
     float simWidth = m_topRight.x - m_bottomLeft.x;
 
-    // Calculate view width based on zoom level
-    float viewWidth = simWidth / m_Zoom;
+    // Don't make this function depend on the zoom level, it's already applied with the viewMatrix
+    // and since this is all relative to the simulation coordinates 
+
+    float viewWidth = simWidth;
 
     // Calculate simulation units per pixel
     float scale = viewWidth / static_cast<float>(m_WindowWidth);

@@ -115,13 +115,17 @@ void ParticleRenderer::Render(const SimulationSystem& sim, const glm::mat4& view
         return;
     }
 
+    // aspect ratio
+    // simulation borderd offset
+
     // Bind shader and set uniforms
     m_Shader.Bind();
     // For the moment the viewMatrix is the MVP matrix, the camera can't move
     m_Shader.setUniformMat4f("u_MVP", viewMatrix); 
 
     // Set uniform to scale up particle radius to expected size
-    float pointSizeScale = sim.PixelToSimulationDistance(sim.GetParticleRadius());
+    // Account for the fact gl_PointSize expects the diameter, not the radius ==> double it
+    float pointSizeScale = sim.GetParticleRenderSize(sim.GetParticleRadius()) * 2.0f;
     m_Shader.setUniform1f("u_PointSizeScale", pointSizeScale);
 
     // Bind vertex array
