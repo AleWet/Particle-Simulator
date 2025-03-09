@@ -5,7 +5,6 @@
 VertexArray::VertexArray()
 {
 	GLCall(glGenVertexArrays(1, &m_RendererID));
-
 }
 
 VertexArray::~VertexArray()
@@ -15,21 +14,26 @@ VertexArray::~VertexArray()
 
 void VertexArray::AddBuffer(const VertexBuffer& vb, const VertexBufferLayout& layout)
 {
-	vb.Bind(); //bind Vertex Buffer
-	Bind();    //bind VAO
+    Bind();    // Bind VAO first
+    vb.Bind(); // Then bind VBO
 
-	const auto& elements = layout.GetElements();
-	unsigned int offSet = 0;
-	
-	for (unsigned int i = 0; i<elements.size(); i++)
-	{
-		const auto& element = elements[i];
+    const auto& elements = layout.GetElements();
+    unsigned int offset = 0;
 
-		GLCall(glEnableVertexAttribArray(i));
-		GLCall(glVertexAttribPointer(i, element.count, element.type, element.normalized, layout.GetStride(), (const void*)offSet));
-		
-		offSet += element.count * VertexBufferElement::GetSizeOfType(element.type);
-	}
+    for (unsigned int i = 0; i < elements.size(); i++)
+    {
+        const auto& element = elements[i];
+
+        GLCall(glEnableVertexAttribArray(i));
+        GLCall(glVertexAttribPointer(i, element.count, element.type,
+            element.normalized, layout.GetStride(),
+            (const void*)offset));
+
+        offset += element.count * VertexBufferElement::GetSizeOfType(element.type);
+    }
+
+    vb.UnBind();
+     UnBind();
 }
 
 void VertexArray::Bind() const

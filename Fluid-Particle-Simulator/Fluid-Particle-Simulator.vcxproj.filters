@@ -54,6 +54,9 @@
     <ClCompile Include="src\ParticleRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\Utils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Object Include="Debug\Application.obj" />
@@ -479,6 +482,7 @@
       <Filter>Header Files</Filter>
     </None>
     <None Include="res\shaders\ParticleShader.shader" />
+    <None Include="res\shaders\BorderShader.shader" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="Debug\opengl-bolierplate.log" />
@@ -1385,6 +1389,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\physics\Physics.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

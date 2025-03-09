@@ -12,6 +12,10 @@ private:
     glm::vec2 m_bottomLeft;  
     glm::vec2 m_topRight;    
     unsigned int m_ParticleRadius;
+    float m_Zoom;
+    float m_SimHeight;
+    float m_SimWidth;
+    unsigned int m_WindowWidth;
 
 public:
     // bottomLeft is the bottom-left corner of the simulation rectangle and
@@ -45,6 +49,32 @@ public:
     
     // Create a view matrix for rendering the simulation
     // zoom: Zoom factor (1.0 = normal, >1.0 = zoom in, <1.0 = zoom out)
-    // aspectRatio: Window width / height
-    glm::mat4 GetViewMatrix(float zoom, float aspectRatio) const;
+    // aspectRatio: Window width / Window height.
+    // For the moment this is the only transformation needed
+    glm::mat4 GetViewMatrix(float aspectRatio, float simulationBorderOffset) const;
+
+    float GetParticleRadius() const { return m_ParticleRadius; }
+
+    // Convert a distance in screen pixels to simulation units
+    // pixelDistance: Distance in screen pixels
+    float PixelToSimulationDistance(float pixelDistance) const;
+
+    float GetZoom() const
+    {
+        return m_Zoom;
+    }
+
+    // Set the zoom level
+    void SetZoom(float zoom)
+    {
+        m_Zoom = zoom;
+    }
+
+    float GetSimHeight() const { return m_SimHeight; }
+
+    void SetWindowWidth(unsigned int width) {
+        m_WindowWidth = width;
+    }
+
+    float GetSimWidth() const { return m_SimWidth; }
 };

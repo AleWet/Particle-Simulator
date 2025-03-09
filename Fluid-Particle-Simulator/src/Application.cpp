@@ -1,176 +1,18 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-#include <iostream>
-#include <vector>
-#include <fstream>
-#include <string>
-#include <sstream>
+#include "physics/SimulationSystem.h"
+#include "physics/Physics.h"
 
-#include <windows.h>
-
-#include "Renderer.h"
-
-#include "VertexBuffer.h"
-#include "IndexBuffer.h"
-#include "VertexArray.h"
-#include "VertexBufferLayout.h"
 #include "Shader.h"
 #include "Texture.h"
 #include "core/Time.h"
 #include "ParticleRenderer.h"
+#include "Renderer.h" // not needed
+#include "Utils.h"
 
-#include "physics/SimulationSystem.h"
-#include "physics/Physics.h"
+// other includes are in Utils.h
 
-#include "glm/glm.hpp"
-#include "glm/gtc/matrix_transform.hpp"
-
-// Add this function to your Application.cpp or create a separate file
-void RenderSimulationFrame(const SimulationSystem& sim, const glm::mat4& viewMatrix)
-{
-    // Create a simple shader for rendering particles
-    static GLuint shaderProgram = 0;
-    static GLint mvpLocation = -1;
-
-    // Initialize the shader if it doesn't exist
-    if (shaderProgram == 0) {
-        // Create an inline shader since we don't want to depend on external files
-        const char* vertexShaderSource = R"(
-            #version 330 core
-            layout(location = 0) in vec2 position;
-            
-            uniform mat4 u_MVP;
-            
-            void main()
-            {
-                gl_Position = u_MVP * vec4(position, 0.0, 1.0);
-                gl_PointSize = 5.0; // Fixed point size
-            }
-        )";
-
-        const char* fragmentShaderSource = R"(
-            #version 330 core
-            out vec4 color;
-            
-            void main()
-            {
-                // Simple circle shape with soft edges
-                vec2 circCoord = 2.0 * gl_PointCoord - 1.0;
-                float circleShape = 1.0 - smoothstep(0.0, 1.0, length(circCoord));
-                
-                // Blue particles
-                color = vec4(0.2, 0.4, 0.8, circleShape);
-                if (circleShape < 0.1) discard; // Discard pixels outside the circle
-            }
-        )";
-
-        // Create and compile vertex shader
-        GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-        GLCall(glShaderSource(vertexShader, 1, &vertexShaderSource, nullptr));
-        GLCall(glCompileShader(vertexShader));
-
-        // Check vertex shader compilation
-        GLint success;
-        GLCall(glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success));
-        if (!success) {
-            char infoLog[512];
-            GLCall(glGetShaderInfoLog(vertexShader, 512, nullptr, infoLog));
-            std::cerr << "Vertex shader compilation failed: " << infoLog << std::endl;
-            return;
-        }
-
-        // Create and compile fragment shader
-        GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-        GLCall(glShaderSource(fragmentShader, 1, &fragmentShaderSource, nullptr));
-        GLCall(glCompileShader(fragmentShader));
-
-        // Check fragment shader compilation
-        GLCall(glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success));
-        if (!success) {
-            char infoLog[512];
-            GLCall(glGetShaderInfoLog(fragmentShader, 512, nullptr, infoLog));
-            std::cerr << "Fragment shader compilation failed: " << infoLog << std::endl;
-            return;
-        }
-
-        // Create and link shader program
-        shaderProgram = glCreateProgram();
-        GLCall(glAttachShader(shaderProgram, vertexShader));
-        GLCall(glAttachShader(shaderProgram, fragmentShader));
-        GLCall(glLinkProgram(shaderProgram));
-
-        // Check program linking
-        GLCall(glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success));
-        if (!success) {
-            char infoLog[512];
-            GLCall(glGetProgramInfoLog(shaderProgram, 512, nullptr, infoLog));
-            std::cerr << "Shader program linking failed: " << infoLog << std::endl;
-            return;
-        }
-
-        // Delete the shaders as they're linked into our program now and no longer necessary
-        GLCall(glDeleteShader(vertexShader));
-        GLCall(glDeleteShader(fragmentShader));
-
-        // Get the location of the MVP uniform
-        mvpLocation = glGetUniformLocation(shaderProgram, "u_MVP");
-        if (mvpLocation == -1) {
-            std::cerr << "Warning: Couldn't find uniform 'u_MVP' in shader program" << std::endl;
-        }
-    }
-
-    // Get particles from simulation
-    const std::vector<Particle>& particles = sim.GetParticles();
-
-    // Create a simple vertex buffer with just positions
-    std::vector<float> vertexData;
-    vertexData.reserve(particles.size() * 2); // 2 floats per particle (x, y)
-
-    for (const auto& p : particles) {
-        vertexData.push_back(p.position.x);
-        vertexData.push_back(p.position.y);
-    }
-
-    // Create and bind a vertex array
-    GLuint vao;
-    GLCall(glGenVertexArrays(1, &vao));
-    GLCall(glBindVertexArray(vao));
-
-    // Create and bind a vertex buffer
-    GLuint vbo;
-    GLCall(glGenBuffers(1, &vbo));
-    GLCall(glBindBuffer(GL_ARRAY_BUFFER, vbo));
-    GLCall(glBufferData(GL_ARRAY_BUFFER, vertexData.size() * sizeof(float), vertexData.data(), GL_STATIC_DRAW));
-
-    // Define vertex attributes
-    GLCall(glEnableVertexAttribArray(0));
-    GLCall(glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0));
-
-    // Clear the screen
-    GLCall(glClearColor(0.1f, 0.1f, 0.1f, 1.0f)); // Dark background
-    GLCall(glClear(GL_COLOR_BUFFER_BIT));
-
-    // Use shader program directly
-    GLCall(glUseProgram(shaderProgram));
-
-    // Set the MVP uniform
-    GLCall(glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, &viewMatrix[0][0]));
-
-    // Draw particles as points
-    GLCall(glEnable(GL_PROGRAM_POINT_SIZE)); // Enable point size in shader
-    GLCall(glDrawArrays(GL_POINTS, 0, particles.size()));
-
-    // Cleanup
-    GLCall(glDisable(GL_PROGRAM_POINT_SIZE));
-    GLCall(glBindVertexArray(0));
-    GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));
-    GLCall(glUseProgram(0));
-
-    // Delete temporary resources
-    GLCall(glDeleteBuffers(1, &vbo));
-    GLCall(glDeleteVertexArrays(1, &vao));
-}
 
 int main(void)
 {
@@ -219,36 +61,69 @@ int main(void)
     GLCall(glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT));
 
     { // Additional scope to avoid memory leaks
+
+        // SIMULATION PARAMETERS ----------------------------------------------------------
+         
+
+
         // Set up simulation boundaries based on screen coordinates
-        // We'll use normalized device coordinates for simplicity, then scale with view matrix
+        // I'll use normalized device coordinates for simplicity, then scale with view matrix
         float aspectRatio = (float)WINDOW_WIDTH / (float)WINDOW_HEIGHT;
-        float simWidth = 200.0f;  // Arbitrary world units for simulation width
-        float simHeight = simWidth / aspectRatio;
+
+        // Arbitrary world units for simulation width
+        float simWidth = 200.0f;  
+
+        // Particle size (in simulation units) ==> this size is relative to the simulation units
+        // there is a bug with this because this is not the actual rendered size, this is just for the physics at the moment
+        unsigned int particleRadius = 15.0f;
+        
+        // Make simulation rectangle the same ratio of the screen for simplicity
+        float simHeight = simWidth / aspectRatio; 
 
         // Define simulation boundaries centered on the origin
         glm::vec2 bottomLeft(-simWidth / 2, -simHeight / 2);
         glm::vec2 topRight(simWidth / 2, simHeight / 2);
 
-        // Particle size (in simulation units)
-        unsigned int particleRadius = 0.2f;
+        // Distance from simulation border and window
+        float simulationBorderOffset = 10.0f;
+
+        // Set zoom
+        float zoom = 0.8f;
+
+        // Add particles in a grid pattern 
+        int rows = 3;
+        int cols = 3;
+        
+        // Set particle grid coordinates, this creates a rectangle that will be moved to the center of the simulation,
+        // At the moment the rectangle is centered in the origin ==> it will also be in the center of the simulation
+        glm::vec2 gridBottomLeft(-60.0f, -60.0f);  // Smaller than full simulation bounds
+        glm::vec2 gridTopRight(60.0f, 60.0f);
+
+        // Space between particles
+        glm::vec2 spacing(0.0f, 0.0f);           
+        float particleMass = 1.0f;
+
+        // Set border rendering parameters
+        glm::vec4 simBorderColor(1.0f, 1.0f, 1.0f, 0.5f); // White
+        glm::vec4 gridBorderColor(0.0f, 1.0f, 0.0f, 0.5f); // Green
+        float borderWidth = 2.0f;
+
+
+
+        // --------------------------------------------------------------------------------
+
 
         // Create simulation system
         SimulationSystem sim(bottomLeft, topRight, particleRadius);
 
-        // Create time manager
-        Time timeManager(1.0f / 60.0f);
+        // set window width for simulation
+        sim.SetWindowWidth(WINDOW_WIDTH);
 
         // set fixed view matrix (for the moment)
-        float zoom = 1.0f;
-        glm::mat4 viewMatrix = sim.GetViewMatrix(zoom, aspectRatio);
+        glm::mat4 viewMatrix = sim.GetViewMatrix(aspectRatio, simulationBorderOffset);
 
-        // Add particles in a grid pattern
-        int rows = 20;
-        int cols = 20;
-        glm::vec2 gridBottomLeft(-8.0f, -6.0f);  // Smaller than full simulation bounds
-        glm::vec2 gridTopRight(8.0f, 6.0f);
-        glm::vec2 spacing(0.5f, 0.5f);  // Space between particles
-        float particleMass = 1.0f;
+        // Create time manager
+        Time timeManager(1.0f / 60.0f);
 
         sim.AddParticleGrid(rows, cols, gridBottomLeft, gridTopRight, spacing, particleMass);
        
@@ -258,19 +133,21 @@ int main(void)
         // Specify bleding function
         GLCall(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
 
+        // Initialize shader path 
         std::string shaderPath = "res/shaders/ParticleShader.shader";
 
         // First check if the shader file exists
-        std::ifstream fileCheck(shaderPath);
-        if (!fileCheck.good()) {
-            std::cerr << "Error: Cannot open shader file: " << shaderPath << std::endl;
-            // Handle the error - maybe set a flag or throw an exception
+        if (!IsShaderPathOk(shaderPath)) 
             return 0;
-        }
-        
 
-        //initialzie particle renderer
-        //ParticleRenderer renderer(stocazzoPath);
+        // initialize shader outside of renderer (easier and more flexible)
+        Shader shader(shaderPath);
+
+        // Bind shader
+        shader.Bind();
+
+        // initialize particle renderer
+        ParticleRenderer renderer(sim, shader);
 
         // Initialize counter for fps 
         int counter = 0;
@@ -278,21 +155,30 @@ int main(void)
         // Main loop
         while (!glfwWindowShouldClose(window))
         {
-            // update physics before rendering
+            // Clear the screen
+            GLCall(glClear(GL_COLOR_BUFFER_BIT));
+            GLCall(glClearColor(0.0f, 0.0f, 0.0f, 1.0f));  // Dark background
+
+            // Set zoom for simulation
+            sim.SetZoom(zoom);
+
+            // Update physics before rendering
             int steps = timeManager.update();
             for (int i = 0; i < steps; i++)
-            {
                 UpdatePhysics(sim, timeManager.getFixedDeltaTime());
-            }
 
-            //renderer.update(sim.GetParticles());
+            // Update buffers with new particle data
+            renderer.UpdateBuffers();
 
-            //renderer.render(sim.GetViewMatrix(zoom, aspectRatio));
+            // Render the particles with the view matrix
+            renderer.Render(sim, viewMatrix);
 
-            RenderSimulationFrame(sim, sim.GetViewMatrix(zoom, aspectRatio));
+            // Render simulation borders
+            BoundsRenderer(sim.GetBounds()[0], sim.GetBounds()[1], borderWidth, simBorderColor, simulationBorderOffset, viewMatrix);
+            BoundsRenderer(gridBottomLeft, gridTopRight, borderWidth, gridBorderColor, 0, viewMatrix);
 
             // Display FPS
-            if (++counter > 1000)
+            if (++counter > 100)
             {
                 std::string title = "Particle Simulation - FPS: " +
                     std::to_string(static_cast<int>(timeManager.getLastfps()));

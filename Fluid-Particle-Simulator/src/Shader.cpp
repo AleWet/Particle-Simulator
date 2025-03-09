@@ -136,22 +136,22 @@ void Shader::UnBind() const
     GLCall(glUseProgram(0));
 }
 
-void Shader::setUniform1i(const std::string& name, int value)
+void Shader::setUniform1i(const std::string& name, int value) const
 {
     GLCall(glUniform1i(GetUniformLocation(name), value));
 }
 
-void Shader::setUniform1f(const std::string& name, float value)
+void Shader::setUniform1f(const std::string& name, float value) const
 {
     GLCall(glUniform1f(GetUniformLocation(name), value));
 }
 
-void Shader::SetUniform4f(const std::string& name, float v0, float v1,float v2, float v3)
+void Shader::SetUniform4f(const std::string& name, float v0, float v1,float v2, float v3) const
 {
     GLCall(glUniform4f(GetUniformLocation(name), v0, v1, v2, v3));
 }
 
-void Shader::setUniformMat4f(const std::string& name, const glm::mat4& matrix)
+void Shader::setUniformMat4f(const std::string& name, const glm::mat4& matrix) const
 {
     // the false stands for the fact that OpenGL expects matrices to be stored in a column-based way
     // and if your matrix isn't stored in that way it would have to be transposed but since GLM already
@@ -159,7 +159,7 @@ void Shader::setUniformMat4f(const std::string& name, const glm::mat4& matrix)
     GLCall(glUniformMatrix4fv(GetUniformLocation(name), 1, GL_FALSE, &matrix[0][0]));
 }
 
-int Shader::GetUniformLocation(const std::string& name)
+int Shader::GetUniformLocation(const std::string& name) const
 {
     if (m_UniformLocationCache.find(name) != m_UniformLocationCache.end())
         return m_UniformLocationCache[name];

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -134,6 +134,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\Application.cpp" />
+    <ClCompile Include="src\Utils.cpp" />
     <ClCompile Include="src\IndexBuffer.cpp" />
     <ClCompile Include="src\ParticleRenderer.cpp" />
     <ClCompile Include="src\physics\Physics.cpp" />
@@ -156,6 +157,7 @@
     <None Include="Debug\vc143.idb" />
     <None Include="Debug\vc143.pdb" />
     <None Include="res\shaders\Basic.shader" />
+    <None Include="res\shaders\BorderShader.shader" />
     <None Include="res\shaders\ParticleShader.shader" />
     <None Include="src\vendor\glm\detail\func_common.inl" />
     <None Include="src\vendor\glm\detail\func_common_simd.inl" />
@@ -300,6 +302,7 @@
     <Text Include="Debug\opengl-bolierplate.log" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Utils.h" />
     <ClInclude Include="src\IndexBuffer.h" />
     <ClInclude Include="src\ParticleRenderer.h" />
     <ClInclude Include="src\physics\Particle.h" />
