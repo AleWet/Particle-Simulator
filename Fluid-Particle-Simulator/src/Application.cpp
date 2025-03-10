@@ -71,10 +71,10 @@ int main(void)
         float aspectRatio = (float)WINDOW_WIDTH / (float)WINDOW_HEIGHT;
 
         // Arbitrary world units for simulation width
-        float simWidth = 200.0f;  
+        float simWidth = 2000.0f;  
 
         // Particle size (in simulation units) ==> this size is relative to the simulation units
-        unsigned int particleRadius = 5.0f;
+        unsigned int particleRadius = 30.0f;
         
         // Make simulation rectangle the same ratio of the screen for simplicity
         float simHeight = simWidth / aspectRatio; 
@@ -84,24 +84,18 @@ int main(void)
         glm::vec2 topRight(simWidth / 2, simHeight / 2);
 
         // Distance from simulation border and window
-        float simulationBorderOffset = 10.0f;
+        float simulationBorderOffset = 1.0f;
 
         // Set zoom
-        float zoom = 0.5f;
+        float zoom = 0.7f;
 
         // Add particles in a grid pattern 
         int rows = 10;
         int cols = 10;
 
         // // PARTICLE CREATION
-        
-        // Set particle grid coordinates, this creates a rectangle that will be moved to the center of the simulation,
-        // At the moment the rectangle is centered in the origin ==> it will also be in the center of the simulation
-        glm::vec2 gridBottomLeft(-60.0f, -60.0f);  // Smaller than full simulation bounds
-        glm::vec2 gridTopRight(60.0f, 60.0f);
-
-        // Space between particles
-        glm::vec2 spacing(0.0f, 0.0f);           
+                  
+        glm::vec2 spacing = glm::vec2(1.0, 1.0);
         float particleMass = 1.0f;
 
         // // BORDER 
@@ -120,7 +114,7 @@ int main(void)
         SimulationSystem sim(bottomLeft, topRight, particleRadius, WINDOW_WIDTH, simulationBorderOffset);
 
         //sim.AddParticleGrid(rows, cols, gridBottomLeft, gridTopRight, spacing, particleMass);
-        sim.AddParticleGrid(rows, cols, gridBottomLeft, gridTopRight, spacing, particleMass);
+        sim.AddParticleGrid(rows, cols, spacing, particleMass);
        
         // Enable blending
         GLCall(glEnable(GL_BLEND));
@@ -178,7 +172,6 @@ int main(void)
             // This implementation isn't the best, this should be inside 
             // the renderer object or the simulation system
             BoundsRenderer(sim.GetBounds()[0], sim.GetBounds()[1], borderWidth, simBorderColor, simulationBorderOffset, MVP);
-            BoundsRenderer(gridBottomLeft, gridTopRight, borderWidth, gridBorderColor, 0, MVP);
 
             // Display FPS
             if (++counter > 100)

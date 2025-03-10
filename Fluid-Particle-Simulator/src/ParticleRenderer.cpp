@@ -87,7 +87,7 @@ void ParticleRenderer::UpdateBuffers()
             vertexData[i].color = glm::vec4(1.0f, 1.0f - t, 1.0f - t, 0.8f);
         }
         
-        vertexData[i].size = m_Simulation.GetParticleRadius();
+        vertexData[i].size = m_Simulation.GetParticleRenderSize();
     }
 
     // Delete old buffer and create a new one with updated data
@@ -125,8 +125,7 @@ void ParticleRenderer::Render()
 
     // Set uniform to scale up particle radius to expected size
     // Account for the fact gl_PointSize expects the diameter in pixels, not the radius ==> double it
-    // this part of the code needs to be re-done
-    float pointSizeScale = m_Simulation.GetParticleRenderSize() * 2.0f;
+    float pointSizeScale = 2.0f; // Double the radius to get diameter
     m_Shader.setUniform1f("u_PointSizeScale", pointSizeScale);
 
     // Bind vertex array
