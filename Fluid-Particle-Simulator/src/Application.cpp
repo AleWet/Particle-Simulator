@@ -119,6 +119,7 @@ int main(void)
         // Create simulation system
         SimulationSystem sim(bottomLeft, topRight, particleRadius, WINDOW_WIDTH, simulationBorderOffset);
 
+        //sim.AddParticleGrid(rows, cols, gridBottomLeft, gridTopRight, spacing, particleMass);
         sim.AddParticleGrid(rows, cols, gridBottomLeft, gridTopRight, spacing, particleMass);
        
         // Enable blending

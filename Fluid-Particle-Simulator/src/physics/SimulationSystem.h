@@ -35,8 +35,12 @@ public:
     // The number of added particles is (rows * cols), the first particle is added at the top-left corner of the rectangle 
     // Make sure to not add particles on top of existing particles to avoid errors.
     // Spacing between particles is added according to the components of the input spacing vector.
+    // the particles circls are tangent to the borders of the desired grid rectangle.
+    // If the provided spacing is too small but the total number of particles can fit inside the ractangle,
+    // the function will render the particles without spacing.
+    // This function doesn't do this exaclty but it's alright, works well enough. Perfection is the enemy of well enough.
     void AddParticleGrid(int rows, int cols, const glm::vec2& bottomLeft, const glm::vec2& topRight,
-        const glm::vec2& spacing, float mass = 1.0f);
+        glm::vec2& spacing, float mass = 1.0f);
 
     const std::vector<Particle>& GetParticles() const { return m_Particles; } // THIS ONE IS JUST OT COPY 
     std::vector<Particle>& GetParticles() { return m_Particles; } // THIS ONE IS TO MODIFY THE VECTORIT

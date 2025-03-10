@@ -21,9 +21,8 @@ void SimulationSystem::AddParticle(const glm::vec2& position, float mass)
     m_Particles.push_back(newParticle);
 }
 
-void SimulationSystem::AddParticleGrid(int rows, int cols, const glm::vec2& bottomLeft,
-    const glm::vec2& topRight, const glm::vec2& spacing,
-    float mass)
+void SimulationSystem::AddParticleGrid(int rows, int cols, const glm::vec2& bottomLeft, const glm::vec2& topRight,
+    glm::vec2& spacing, float mass)
 {
     // Validate input parameters
     if (rows <= 0 || cols <= 0) {
@@ -42,91 +41,98 @@ void SimulationSystem::AddParticleGrid(int rows, int cols, const glm::vec2& bott
         return;
     }
 
-    // Calculate total space needed for the grid
-    float requiredWidth, requiredHeight;
+    // Calculate grid dimensions
+    glm::vec2 gridSize = gridTopRight - gridBottomLeft;
 
-    // Calculate total space with particle sizes included
-    requiredWidth = (cols * (2 * m_ParticleRadius)); // Space for all particles
+    // Check if minimum grid can fit (one particle in each corner)
+    if (gridSize.x < 2 * m_ParticleRadius || gridSize.y < 2 * m_ParticleRadius) {
+        std::cerr << "Error: Grid area too small for particles of radius " << m_ParticleRadius << std::endl;
+        return;
+    }
+
+    // Calculate available space for particles
+    float availableWidth = gridSize.x - 2 * m_ParticleRadius;  // Account for particles at edges
+    float availableHeight = gridSize.y - 2 * m_ParticleRadius;
+
+    // Calculate default spacing if available space permits
+    glm::vec2 finalSpacing = spacing;
+
+    // Check if we need cols-1 spaces in X direction and rows-1 spaces in Y direction
     if (cols > 1) {
-        requiredWidth += ((cols - 1) * spacing.x); // Add spacing between particles
+        float totalWidthNeeded = 2 * m_ParticleRadius * cols + spacing.x * (cols - 1);
+        if (totalWidthNeeded > gridSize.x) {
+            // Spacing is too large, calculate maximum possible spacing
+            float maxSpacingX = (gridSize.x - 2 * m_ParticleRadius * cols) / (cols - 1);
+            if (maxSpacingX < 0) {
+                // Can't fit with any spacing, try without spacing
+                finalSpacing.x = 0;
+                std::cout << "Warning: X spacing reduced to 0 to fit particles" << std::endl;
+            }
+            else {
+                finalSpacing.x = maxSpacingX;
+                std::cout << "Warning: X spacing reduced to " << maxSpacingX << " to fit particles" << std::endl;
+            }
+        }
     }
 
-    requiredHeight = (rows * (2 * m_ParticleRadius)); // Space for all particles
     if (rows > 1) {
-        requiredHeight += ((rows - 1) * spacing.y); // Add spacing between particles
+        float totalHeightNeeded = 2 * m_ParticleRadius * rows + spacing.y * (rows - 1);
+        if (totalHeightNeeded > gridSize.y) {
+            // Spacing is too large, calculate maximum possible spacing
+            float maxSpacingY = (gridSize.y - 2 * m_ParticleRadius * rows) / (rows - 1);
+            if (maxSpacingY < 0) {
+                // Can't fit with any spacing, try without spacing
+                finalSpacing.y = 0;
+                std::cout << "Warning: Y spacing reduced to 0 to fit particles" << std::endl;
+            }
+            else {
+                finalSpacing.y = maxSpacingY;
+                std::cout << "Warning: Y spacing reduced to " << maxSpacingY << " to fit particles" << std::endl;
+            }
+        }
     }
 
-    // Check if the grid with specified spacing will fit
-    if (requiredWidth > (gridTopRight.x - gridBottomLeft.x) ||
-        requiredHeight > (gridTopRight.y - gridBottomLeft.y)) {
-        std::cerr << "Error: Grid with " << rows << "x" << cols << " particles (radius " << m_ParticleRadius << ")"
-            << " and spacing " << spacing.x << "x" << spacing.y
-            << " requires " << requiredWidth << "x" << requiredHeight << " units, "
-            << "but only " << (gridTopRight.x - gridBottomLeft.x) << "x"
-            << (gridTopRight.y - gridBottomLeft.y) << " units are available." << std::endl;
+    // Check if particles would overlap with zero spacing
+    if (2 * m_ParticleRadius * cols > gridSize.x || 2 * m_ParticleRadius * rows > gridSize.y) {
+        std::cerr << "Error: Cannot fit " << rows << "x" << cols << " particles even with zero spacing" << std::endl;
         return;
     }
 
-    // Calculate available space
-    glm::vec2 availableSpace = gridTopRight - gridBottomLeft;
+    // Calculate step sizes between particles
+    float stepX = (cols > 1) ? (2 * m_ParticleRadius + finalSpacing.x) : 0;
+    float stepY = (rows > 1) ? (2 * m_ParticleRadius + finalSpacing.y) : 0;
 
-    std::cout << availableSpace.x << " " << availableSpace.y << std::endl;
+    // Position of first particle (top-left corner with particle tangent to borders)
+    glm::vec2 startPos = glm::vec2(
+        gridBottomLeft.x + m_ParticleRadius,  // Left edge + radius = tangent to left border
+        gridTopRight.y - m_ParticleRadius     // Top edge - radius = tangent to top border
+    );
 
-    // Ensure that the number of particles can fit 
-    if ((availableSpace.y / (2 * m_ParticleRadius)) * (availableSpace.x / (2 * m_ParticleRadius)) < rows * cols)
-    {
-        std::cerr << "Error: Too many particles to fit inside the desired grid" << std::endl;
-        return;
-    }
-
-    // Determine final spacing between particles
-    glm::vec2 finalSpacing;
-
-    // If only one row/column, position it in the center
-    if (cols == 1) {
-        finalSpacing.x = 0;
-    }
-    else {
-        // Use either user-specified spacing or evenly distribute
-        finalSpacing.x = (spacing.x > 0) ?
-            spacing.x : availableSpace.x / (cols - 1);
-    }
-
-    if (rows == 1) {
-        finalSpacing.y = 0;
-    }
-    else {
-        finalSpacing.y = (spacing.y > 0) ?
-            spacing.y : availableSpace.y / (rows - 1);
-    }
-
-    // Verify minimum spacing required for particles not to overlap
-    float minRequiredSpacing = 2 * m_ParticleRadius;
-    if ((cols > 1 && finalSpacing.x < minRequiredSpacing) ||
-        (rows > 1 && finalSpacing.y < minRequiredSpacing)) {
-        std::cerr << "Error: Particles would overlap with calculated spacing of "
-            << finalSpacing.x << "x" << finalSpacing.y << ". "
-            << "Minimum spacing needed: " << minRequiredSpacing << " units." << std::endl;
-        return;
-    }
-
-    // Calculate grid dimensions with the final spacing
-    glm::vec2 gridSize(finalSpacing.x * (cols - 1), finalSpacing.y * (rows - 1));
-
-    // Center the grid within the available space if it's smaller than available area
-    glm::vec2 startPos = gridBottomLeft;
-    if (gridSize.x < availableSpace.x) {
-        startPos.x += (availableSpace.x - gridSize.x) / 2.0f;
-    }
-    if (gridSize.y < availableSpace.y) {
-        startPos.y += (availableSpace.y - gridSize.y) / 2.0f;
-    }
-
-    // Create the grid with final spacing
+    // Generate the particles
     for (int row = 0; row < rows; row++) {
         for (int col = 0; col < cols; col++) {
-            glm::vec2 position = startPos + glm::vec2(col * finalSpacing.x, row * finalSpacing.y);
-            AddParticle(position, mass);
+            // Calculate position for this particle
+            glm::vec2 position(
+                startPos.x + col * stepX,
+                startPos.y - row * stepY  // Subtract for Y since we start from top
+            );
+
+            // Collision detection with existing particles
+            bool collisionDetected = false;
+            for (const Particle& existingParticle : m_Particles) {
+                float distance = glm::length(existingParticle.position - position);
+                if (distance < 2 * m_ParticleRadius) {
+                    collisionDetected = true;
+                    std::cout << "Warning: Skipping particle at position (" << position.x << ", "
+                        << position.y << ") due to collision with existing particle" << std::endl;
+                    break;
+                }
+            }
+
+            // Add the particle if no collision
+            if (!collisionDetected) {
+                AddParticle(position, mass);
+            }
         }
     }
 
