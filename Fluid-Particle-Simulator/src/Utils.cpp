@@ -12,8 +12,7 @@ bool IsShaderPathOk(std::string shaderPath)
 }
 
 void BoundsRenderer(glm::vec2 bottomLeft, glm::vec2 topRight, float borderWidth,
-    glm::vec4 color, float simulationBorderOffset,
-    const glm::mat4& simulationViewMatrix)
+    glm::vec4 color,const glm::mat4& simulationViewMatrix)
 {
     // Static variables to persist between function calls
     static Shader* borderShader = nullptr;
@@ -24,6 +23,7 @@ void BoundsRenderer(glm::vec2 bottomLeft, glm::vec2 topRight, float borderWidth,
     static glm::vec2 lastBottomLeft(0.0f, 0.0f);
     static glm::vec2 lastTopRight(0.0f, 0.0f);
     static float lastBorderWidth = 0.0f;
+    static float lastOffset = 0.0f;
 
     // One-time initialization or when parameters change
     bool needsUpdate = !initialized ||
@@ -59,20 +59,26 @@ void BoundsRenderer(glm::vec2 bottomLeft, glm::vec2 topRight, float borderWidth,
         // Create vertex array
         borderVA = new VertexArray();
 
-        // Define vertices for the border
+        // Apply the border offset to all sides
+        float topOffset = 0.0f;
+        float bottomOffset = 0.0f;
+        float leftOffset = 0.0f;
+        float rightOffset = 0.0f;
+
+        // Define vertices for the border with offset applied
         // We create an inner and outer rectangle to form the border
         float vertices[] = {
             // Outer rectangle (counterclockwise)
-            bottomLeft.x - borderWidth, bottomLeft.y - borderWidth,  // 0: Bottom-left outer
-            topRight.x + borderWidth, bottomLeft.y - borderWidth,    // 1: Bottom-right outer
-            topRight.x + borderWidth, topRight.y + borderWidth,      // 2: Top-right outer
-            bottomLeft.x - borderWidth, topRight.y + borderWidth,    // 3: Top-left outer
+            bottomLeft.x - borderWidth - leftOffset, bottomLeft.y - borderWidth - bottomOffset,  // 0: Bottom-left outer
+            topRight.x + borderWidth + rightOffset, bottomLeft.y - borderWidth - bottomOffset,   // 1: Bottom-right outer
+            topRight.x + borderWidth + rightOffset, topRight.y + borderWidth + topOffset,        // 2: Top-right outer
+            bottomLeft.x - borderWidth - leftOffset, topRight.y + borderWidth + topOffset,       // 3: Top-left outer
 
             // Inner rectangle (clockwise)
-            bottomLeft.x, bottomLeft.y,                             // 4: Bottom-left inner
-            topRight.x, bottomLeft.y,                               // 5: Bottom-right inner
-            topRight.x, topRight.y,                                 // 6: Top-right inner
-            bottomLeft.x, topRight.y                                // 7: Top-left inner
+            bottomLeft.x - leftOffset, bottomLeft.y - bottomOffset,                             // 4: Bottom-left inner
+            topRight.x + rightOffset, bottomLeft.y - bottomOffset,                              // 5: Bottom-right inner
+            topRight.x + rightOffset, topRight.y + topOffset,                                   // 6: Top-right inner
+            bottomLeft.x - leftOffset, topRight.y + topOffset                                   // 7: Top-left inner
         };
 
         // Create and bind vertex buffer
@@ -113,14 +119,7 @@ void BoundsRenderer(glm::vec2 bottomLeft, glm::vec2 topRight, float borderWidth,
 
     // Bind shader and set uniforms
     borderShader->Bind();
-
-    // Note the correct method name based on your Shader implementation
     borderShader->SetUniform4f("u_Color", color.r, color.g, color.b, color.a);
-
-    // Calculate view matrix (orthographic projection)
-    // This ensures the border is visible with the current view
-    float padding = borderWidth * 2.0f;  // Extra padding to ensure border is visible
-
     borderShader->setUniformMat4f("u_MVP", simulationViewMatrix);
 
     // Bind vertex array and index buffer

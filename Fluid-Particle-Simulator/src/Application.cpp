@@ -74,7 +74,7 @@ int main(void)
         float simWidth = 2000.0f;  
 
         // Particle size (in simulation units) ==> this size is relative to the simulation units
-        unsigned int particleRadius = 5.0f;
+        unsigned int particleRadius = 50.0f;
         
         // Make simulation rectangle the same ratio of the screen for simplicity
         float simHeight = simWidth / aspectRatio; 
@@ -90,12 +90,12 @@ int main(void)
         float zoom = 0.7f;
 
         // Add particles in a grid pattern 
-        int rows = 90;
-        int cols = 80;
+        int rows = 10;
+        int cols = 10;
 
         // // PARTICLE CREATION
                   
-        glm::vec2 spacing = glm::vec2(1.0, 1.0);
+        glm::vec2 spacing = glm::vec2(0.1f, 0.1);
         float particleMass = 1.0f;
 
         // // BORDER 
@@ -111,7 +111,7 @@ int main(void)
 
 
         // Create simulation system
-        SimulationSystem sim(bottomLeft, topRight, particleRadius, WINDOW_WIDTH, simulationBorderOffset);
+        SimulationSystem sim(bottomLeft, topRight, particleRadius, WINDOW_WIDTH);
 
         //sim.AddParticleGrid(rows, cols, gridBottomLeft, gridTopRight, spacing, particleMass);
         sim.AddParticleGrid(rows, cols, spacing, particleMass);
@@ -171,7 +171,7 @@ int main(void)
             // Render simulation borders
             // This implementation isn't the best, this should be inside 
             // the renderer object or the simulation system
-            BoundsRenderer(sim.GetBounds()[0], sim.GetBounds()[1], borderWidth, simBorderColor, simulationBorderOffset, MVP);
+            BoundsRenderer(sim.GetBounds()[0], sim.GetBounds()[1], borderWidth, simBorderColor, MVP);
 
             // Display FPS
             if (++counter > 100)

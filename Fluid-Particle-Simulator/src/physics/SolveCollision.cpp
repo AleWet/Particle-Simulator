@@ -1,37 +1,47 @@
 #include "SolveCollision.h"
 
-void SolveCollisionBorder(Particle& particleA, 
-                        const std::vector<glm::vec2> simBounds, 
-                        unsigned int particleRadius)
+void SolveCollisionBorder(Particle& particleA,
+    const std::vector<glm::vec2> simBounds,
+    unsigned int particleRadius)
 {
-    // Simple boundary collision handling
+    // Extract boundary coordinates
     const glm::vec2& bottomLeft = simBounds[0];
     const glm::vec2& topRight = simBounds[1];
 
-    // Horizontal bounds check, the + 1 is just for aesthetics
-    if (particleA.position.x < bottomLeft.x + particleRadius + 1) {
-        particleA.position.x = bottomLeft.x + particleRadius + 1;
-        particleA.velocity.x *= -1.0f;  // 100% elastic
+    // Calculate particle radius in simulation units
+    float radius = static_cast<float>(particleRadius);
+
+    // Store the original velocity for calculating reflection
+    glm::vec2 originalVelocity = particleA.velocity;
+    bool collided = false;
+
+    // Horizontal bounds check
+    if (particleA.position.x - radius < bottomLeft.x) {
+        particleA.position.x = bottomLeft.x + radius;
+        particleA.velocity.x = -particleA.velocity.x;
+        collided = true;
     }
-    else if (particleA.position.x > topRight.x - particleRadius) {
-        particleA.position.x = topRight.x - particleRadius;
-        particleA.velocity.x *= -1.0f;  // 100% elastic
+    else if (particleA.position.x + radius > topRight.x) {
+        particleA.position.x = topRight.x - radius;
+        particleA.velocity.x = -particleA.velocity.x;
+        collided = true;
     }
 
     // Vertical bounds check
-    if (particleA.position.y < bottomLeft.y + particleRadius + 1) {
-        particleA.position.y = bottomLeft.y + particleRadius + 1;
-        particleA.velocity.y *= -1.0f;  // 100% elastic
+    if (particleA.position.y - radius < bottomLeft.y) {
+        particleA.position.y = bottomLeft.y + radius;
+        particleA.velocity.y = -particleA.velocity.y;
+        collided = true;
     }
-    else if (particleA.position.y > topRight.y - particleRadius) {
-        particleA.position.y = topRight.y - particleRadius;
-        particleA.velocity.y *= -1.0f;  // 100% elastic
+    else if (particleA.position.y + radius > topRight.y) {
+        particleA.position.y = topRight.y - radius;
+        particleA.velocity.y = -particleA.velocity.y;
+        collided = true;
     }
-}
 
-void SolveCollisionParticle(Particle& particleA, Particle& particleB, 
-                            const std::vector<glm::vec2> simBounds, 
-                            unsigned int particleRadius)
-{
-
+    // Add energy loss during collision (coefficient of restitution)
+    if (collided) {
+        
+        //particleA.velocity *= 0.95f;
+    }
 }

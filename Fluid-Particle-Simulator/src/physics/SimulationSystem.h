@@ -17,15 +17,14 @@ private:
     float m_SimHeight;
     float m_SimWidth;
     unsigned int m_WindowWidth;
-    float m_SimulationBorderOffSet;
 
 public:
     // bottomLeft is the bottom-left corner of the simulation rectangle and
     // topRight is the top-right corner of the simulation rectangle.
-    // Initialize the size of a single particle 
+    // Initialize the size of a single particle. The simulation is always centered.
     // Call this function once per simulation, calling it multiple times will delete previous simulation.
     // For the moment there are no visuals for bounds of the simulation
-    SimulationSystem(const glm::vec2& bottomLeft, const glm::vec2& topRight, unsigned int particleRadius, unsigned int windowWidth, float simulationBorderOffset);
+    SimulationSystem(const glm::vec2& bottomLeft, const glm::vec2& topRight, unsigned int particleRadius, unsigned int windowWidth);
     ~SimulationSystem();
 
     // Add new particle to particle vector, default mass is 1.0f. 

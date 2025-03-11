@@ -2,9 +2,9 @@
 #include <iostream>
 #include <algorithm>
 
-SimulationSystem::SimulationSystem(const glm::vec2& bottomLeft, const glm::vec2& topRight, unsigned int particleRadius, unsigned int windowWidth, float simulationBorderOffset)
+SimulationSystem::SimulationSystem(const glm::vec2& bottomLeft, const glm::vec2& topRight, unsigned int particleRadius, unsigned int windowWidth)
     : m_bottomLeft(bottomLeft), m_topRight(topRight), m_ParticleRadius(particleRadius),
-    m_Zoom(1.0f), m_WindowWidth(windowWidth), m_SimulationBorderOffSet(simulationBorderOffset)
+    m_Zoom(1.0f), m_WindowWidth(windowWidth)
 {
     m_SimHeight = std::abs(topRight.y - bottomLeft.y);
     m_SimWidth = std::abs(topRight.x - bottomLeft.x);
@@ -24,12 +24,12 @@ void SimulationSystem::AddParticle(const glm::vec2& position, float mass)
 void SimulationSystem::AddParticleGrid(int rows, int cols, glm::vec2 spacing, float mass)
 {
     // Calculate the starting position (top-left corner of the simulation area)
-    float startX = m_bottomLeft.x + 2 * m_ParticleRadius;
-    float startY = m_topRight.y - 2 * m_ParticleRadius;
+    float startX = m_bottomLeft.x + m_ParticleRadius;
+    float startY = m_topRight.y - m_ParticleRadius;
 
     // Calculate step between particles (center-to-center distance)
-    float stepX = 3.0f * m_ParticleRadius + spacing.x; // the three is a bug that i have yet to figure out 
-    float stepY = 3.0f * m_ParticleRadius + spacing.y;
+    float stepX = 2.0f * m_ParticleRadius + spacing.x;
+    float stepY = 2.0f * m_ParticleRadius + spacing.y;
 
     // Generate particles in a grid pattern
     for (int i = 0; i < rows; ++i) {
@@ -71,13 +71,6 @@ glm::mat4 SimulationSystem::GetViewMatrix() const
 
     // Create view transformation matrix
     glm::mat4 view = glm::mat4(1.0f);
-
-    // Apply vertical offset to create top border
-    view = glm::translate(view, glm::vec3(
-        0.0f,                       // X: No horizontal translation
-        -m_SimulationBorderOffSet,  // Y: Move "camera" down to create top border
-        0.0f                        // Z: No depth translation
-    ));
 
     // Center the view on the simulation area
     view = glm::translate(view, glm::vec3(

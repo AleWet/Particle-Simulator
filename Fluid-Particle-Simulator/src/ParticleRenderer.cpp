@@ -3,15 +3,9 @@
 #include "VertexBufferLayout.h"
 #include <iostream>
 
-// Structure for the particle vertex data that will be sent to the GPU
-struct ParticleVertex {
-    glm::vec2 position;  // Particle position
-    glm::vec4 color;     // Particle color (RGBA)
-    float size;          // Particle size
-};
-
 ParticleRenderer::ParticleRenderer(const SimulationSystem& simulation, const Shader& shader)
-    : m_Simulation(simulation), m_Shader(shader), m_VertexArray(nullptr), m_VertexBuffer(nullptr)
+    : m_Simulation(simulation), m_Shader(shader), m_VertexArray(nullptr),
+    m_VertexBuffer(nullptr), m_InstanceBuffer(nullptr), m_IndexBuffer(nullptr)
 {
     // Initialize buffers
     InitBuffers();
@@ -25,6 +19,16 @@ ParticleRenderer::~ParticleRenderer()
         m_VertexBuffer = nullptr;
     }
 
+    if (m_InstanceBuffer) {
+        delete m_InstanceBuffer;
+        m_InstanceBuffer = nullptr;
+    }
+
+    if (m_IndexBuffer) {
+        delete m_IndexBuffer;
+        m_IndexBuffer = nullptr;
+    }
+
     if (m_VertexArray) {
         delete m_VertexArray;
         m_VertexArray = nullptr;
@@ -36,19 +40,73 @@ void ParticleRenderer::InitBuffers()
     // Create a new vertex array
     m_VertexArray = new VertexArray();
 
-    // Create an empty vertex buffer initially (update in UpdateBuffers)
-    // Start with a arbitrary size for the buffer
-    const size_t initialBufferSize = sizeof(ParticleVertex) * 1000; // Allocate for 1000 particles initially
-    m_VertexBuffer = new VertexBuffer(nullptr, initialBufferSize);
+    // Create a quad (2 triangles) that will be instanced for each particle
+    // These vertices define a quad from (-1,-1) to (1,1)
+    float quadVertices[] = {
+        // positions      // texture coords
+        -1.0f, -1.0f,     0.0f, 0.0f,  // bottom left
+         1.0f, -1.0f,     1.0f, 0.0f,  // bottom right
+         1.0f,  1.0f,     1.0f, 1.0f,  // top right
+        -1.0f,  1.0f,     0.0f, 1.0f   // top left
+    };
 
-    // Set up the vertex buffer layout
-    VertexBufferLayout layout;
-    layout.Push<float>(2);  // Position (vec2)
-    layout.Push<float>(4);  // Color (vec4)
-    layout.Push<float>(1);  // Size (float)
+    // Create indices for the quad (2 triangles)
+    unsigned int quadIndices[] = {
+        0, 1, 2,  // first triangle
+        2, 3, 0   // second triangle
+    };
 
-    // Link the vertex buffer to the vertex array with the defined layout
-    m_VertexArray->AddBuffer(*m_VertexBuffer, layout);
+    // Create vertex buffer for the quad
+    m_VertexBuffer = new VertexBuffer(quadVertices, sizeof(quadVertices));
+
+    // Create index buffer
+    m_IndexBuffer = new IndexBuffer(quadIndices, 6);
+
+    // Set up vertex buffer layout
+    VertexBufferLayout quadLayout;
+    quadLayout.Push<float>(2);  // Position (vec2)
+    quadLayout.Push<float>(2);  // Texture coordinates (vec2)
+
+    // Link the vertex buffer to the vertex array
+    m_VertexArray->AddBuffer(*m_VertexBuffer, quadLayout);
+
+    // Bind the index buffer to the vertex array
+    m_VertexArray->Bind();
+    m_IndexBuffer->Bind();
+
+    // Create an empty instance buffer initially (will be updated in UpdateBuffers)
+    const size_t initialBufferSize = sizeof(ParticleInstance) * 1000; // Allocate for 1000 particles initially
+    m_InstanceBuffer = new VertexBuffer(nullptr, initialBufferSize);
+
+    // Set up instance buffer layout
+    VertexBufferLayout instanceLayout;
+    instanceLayout.Push<float>(2);  // Position (vec2)
+    instanceLayout.Push<float>(4);  // Color (vec4)
+    instanceLayout.Push<float>(1);  // Size (float)
+
+    // Configure the instance buffer attributes
+    m_VertexArray->Bind();
+    m_InstanceBuffer->Bind();
+
+    // The instance data needs to be linked to the VAO with a divisor
+    // This tells OpenGL that these attributes advance once per instance, not per vertex
+    GLCall(glEnableVertexAttribArray(2)); // Start after the quad attributes (0,1)
+    GLCall(glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(ParticleInstance), (void*)0));
+    GLCall(glVertexAttribDivisor(2, 1)); // Position (advance one instance at a time)
+
+    GLCall(glEnableVertexAttribArray(3));
+    GLCall(glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(ParticleInstance), (void*)(2 * sizeof(float))));
+    GLCall(glVertexAttribDivisor(3, 1)); // Color (advance one instance at a time)
+
+    GLCall(glEnableVertexAttribArray(4));
+    GLCall(glVertexAttribPointer(4, 1, GL_FLOAT, GL_FALSE, sizeof(ParticleInstance), (void*)(6 * sizeof(float))));
+    GLCall(glVertexAttribDivisor(4, 1)); // Size (advance one instance at a time)
+
+    // Unbind everything
+    m_VertexArray->UnBind();
+    m_VertexBuffer->UnBind();
+    m_InstanceBuffer->UnBind();
+    m_IndexBuffer->UnBind();
 }
 
 void ParticleRenderer::UpdateBuffers()
@@ -58,25 +116,24 @@ void ParticleRenderer::UpdateBuffers()
     const size_t particleCount = particles.size();
 
     if (particleCount == 0) {
-        return; 
+        return;
     }
 
-    // Create a vector of ParticleVertex for the updated data
-    std::vector<ParticleVertex> vertexData(particleCount);
+    // Create a vector of ParticleInstance for the updated data
+    std::vector<ParticleInstance> instanceData(particleCount);
 
-    // Update vertex data for each particle
+    // Update instance data for each particle
     for (size_t i = 0; i < particleCount; i++) {
         const Particle& particle = particles[i];
 
         // Set position directly from particle
-        vertexData[i].position = particle.position;
+        instanceData[i].position = particle.position;
 
-        // Color based on velocity, not temperature (blue -> green -> red)
+        // Color based on velocity (blue -> green -> red)
         float normalizedV = (std::min(glm::length(particle.velocity), 100.0f)) / 100.0f;
         normalizedV = glm::clamp(normalizedV, 0.0f, 1.0f);
 
         // Use a continuous RGB gradient from blue -> cyan -> green -> yellow -> red
-        // (0,0,1) -> (0,1,1) -> (0,1,0) -> (1,1,0) -> (1,0,0)
         glm::vec3 color;
 
         if (normalizedV < 0.25f) {
@@ -100,27 +157,37 @@ void ParticleRenderer::UpdateBuffers()
             color = glm::vec3(1.0f, 1.0f - t, 0.0f);
         }
 
-        vertexData[i].color = glm::vec4(color, 1.0f);
-        
-        vertexData[i].size = m_Simulation.GetParticleRenderSize();
+        instanceData[i].color = glm::vec4(color, 1.0f);
+        instanceData[i].size = m_Simulation.GetParticleRenderSize();
     }
 
-    // Delete old buffer and create a new one with updated data
-    if (m_VertexBuffer) {
-        m_VertexBuffer->UnBind();
-        delete m_VertexBuffer;
+    // Update or recreate the instance buffer with new data
+    if (m_InstanceBuffer) {
+        m_InstanceBuffer->UnBind();
+        delete m_InstanceBuffer;
     }
-    
-    // Create a new vertex buffer with the updated data
-    m_VertexBuffer = new VertexBuffer(vertexData.data(), sizeof(ParticleVertex) * particleCount);
 
-    // Re-attach the new buffer to the vertex array
-    VertexBufferLayout layout;
-    layout.Push<float>(2);  // Position (vec2)
-    layout.Push<float>(4);  // Color (vec4)
-    layout.Push<float>(1);  // Size (float)
+    // Create a new instance buffer with the updated data
+    m_InstanceBuffer = new VertexBuffer(instanceData.data(), sizeof(ParticleInstance) * particleCount);
 
-    m_VertexArray->AddBuffer(*m_VertexBuffer, layout);
+    // Rebind the attributes for the new instance buffer
+    m_VertexArray->Bind();
+    m_InstanceBuffer->Bind();
+
+    GLCall(glEnableVertexAttribArray(2));
+    GLCall(glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(ParticleInstance), (void*)0));
+    GLCall(glVertexAttribDivisor(2, 1));
+
+    GLCall(glEnableVertexAttribArray(3));
+    GLCall(glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(ParticleInstance), (void*)(2 * sizeof(float))));
+    GLCall(glVertexAttribDivisor(3, 1));
+
+    GLCall(glEnableVertexAttribArray(4));
+    GLCall(glVertexAttribPointer(4, 1, GL_FLOAT, GL_FALSE, sizeof(ParticleInstance), (void*)(6 * sizeof(float))));
+    GLCall(glVertexAttribDivisor(4, 1));
+
+    m_VertexArray->UnBind();
+    m_InstanceBuffer->UnBind();
 }
 
 void ParticleRenderer::Render()
@@ -132,27 +199,26 @@ void ParticleRenderer::Render()
 
     // Create MVP for particles
     glm::mat4 particleMVP = m_Simulation.GetProjMatrix() * m_Simulation.GetViewMatrix();
-    
+
     // Bind shader and set uniforms
     m_Shader.Bind();
-    // For the moment the viewMatrix is the MVP matrix, the camera can't move
     m_Shader.setUniformMat4f("u_MVP", particleMVP);
 
-    // Set uniform to scale up particle radius to expected size
-    // Account for the fact gl_PointSize expects the diameter in pixels, not the radius ==> double it
-    float pointSizeScale = 2.0f; // Double the radius to get diameter
-    m_Shader.setUniform1f("u_PointSizeScale", pointSizeScale);
-
-    // Bind vertex array
+    // Bind vertex array and index buffer
     m_VertexArray->Bind();
+    m_IndexBuffer->Bind();
 
-    // Enable point size (ensure this is enabled)
-    GLCall(glEnable(GL_PROGRAM_POINT_SIZE));
-
-    // Draw the particles as points
-    GLCall(glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(m_Simulation.GetParticles().size())));
+    // Draw instanced quads
+    GLCall(glDrawElementsInstanced(
+        GL_TRIANGLES,
+        6,                                             // 6 indices per quad (2 triangles)
+        GL_UNSIGNED_INT,
+        0,
+        static_cast<GLsizei>(m_Simulation.GetParticles().size()) // Number of instances
+    ));
 
     // Unbind everything
     m_VertexArray->UnBind();
+    m_IndexBuffer->UnBind();
     m_Shader.UnBind();
 }

@@ -20,5 +20,4 @@ bool IsShaderPathOk(std::string shaderPath);
 
 // Renders the edges of the simulations
 void BoundsRenderer(glm::vec2 bottomLeft, glm::vec2 topRight, float borderWidth,
-    glm::vec4 color, float simulationBorderOffset,
-    const glm::mat4& simulationViewMatrix);
+    glm::vec4 color, const glm::mat4& simulationViewMatrix);
