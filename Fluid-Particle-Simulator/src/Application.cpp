@@ -74,7 +74,7 @@ int main(void)
         float simWidth = 2000.0f;  
 
         // Particle size (in simulation units) ==> this size is relative to the simulation units
-        unsigned int particleRadius = 50.0f;
+        float particleRadius = 40.0f;
         
         // Make simulation rectangle the same ratio of the screen for simplicity
         float simHeight = simWidth / aspectRatio; 
@@ -91,12 +91,13 @@ int main(void)
 
         // Add particles in a grid pattern 
         int rows = 10;
-        int cols = 10;
+        int cols = 9;
 
         // // PARTICLE CREATION
                   
-        glm::vec2 spacing = glm::vec2(0.1f, 0.1);
+        glm::vec2 spacing = glm::vec2(0.0f, 0.0f);
         float particleMass = 1.0f;
+        bool withInitialVelocity = true;
 
         // // BORDER 
 
@@ -114,7 +115,7 @@ int main(void)
         SimulationSystem sim(bottomLeft, topRight, particleRadius, WINDOW_WIDTH);
 
         //sim.AddParticleGrid(rows, cols, gridBottomLeft, gridTopRight, spacing, particleMass);
-        sim.AddParticleGrid(rows, cols, spacing, particleMass);
+        sim.AddParticleGrid(rows, cols, spacing, withInitialVelocity, particleMass);
        
         // Enable blending
         GLCall(glEnable(GL_BLEND));

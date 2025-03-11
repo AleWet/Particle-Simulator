@@ -2,7 +2,7 @@
 #include <iostream>
 #include <algorithm>
 
-SimulationSystem::SimulationSystem(const glm::vec2& bottomLeft, const glm::vec2& topRight, unsigned int particleRadius, unsigned int windowWidth)
+SimulationSystem::SimulationSystem(const glm::vec2& bottomLeft, const glm::vec2& topRight, float particleRadius, unsigned int windowWidth)
     : m_bottomLeft(bottomLeft), m_topRight(topRight), m_ParticleRadius(particleRadius),
     m_Zoom(1.0f), m_WindowWidth(windowWidth)
 {
@@ -15,13 +15,13 @@ SimulationSystem::~SimulationSystem()
     // Destructor implementation (empty for now)
 }
 
-void SimulationSystem::AddParticle(const glm::vec2& position, float mass)
+void SimulationSystem::AddParticle(const glm::vec2& position, const glm::vec2& velocity, float mass)
 {
-    Particle newParticle(position, mass);
+    Particle newParticle(position, velocity, mass);
     m_Particles.push_back(newParticle);
 }
 
-void SimulationSystem::AddParticleGrid(int rows, int cols, glm::vec2 spacing, float mass)
+void SimulationSystem::AddParticleGrid(int rows, int cols, glm::vec2 spacing, bool withInitialVelocity, float mass)
 {
     // Calculate the starting position (top-left corner of the simulation area)
     float startX = m_bottomLeft.x + m_ParticleRadius;
@@ -31,6 +31,9 @@ void SimulationSystem::AddParticleGrid(int rows, int cols, glm::vec2 spacing, fl
     float stepX = 2.0f * m_ParticleRadius + spacing.x;
     float stepY = 2.0f * m_ParticleRadius + spacing.y;
 
+    glm::vec2 vel = glm::vec2(10.0f, -100.0f);
+    glm::vec2 nullVel = glm::vec2(0.0f, 0.0f);
+
     // Generate particles in a grid pattern
     for (int i = 0; i < rows; ++i) {
         for (int j = 0; j < cols; ++j) {
@@ -38,7 +41,11 @@ void SimulationSystem::AddParticleGrid(int rows, int cols, glm::vec2 spacing, fl
                 startX + j * stepX,          // Move right for each column
                 startY - i * stepY           // Move down for each row
             );
-            AddParticle(position, mass);
+
+            if (withInitialVelocity)
+                AddParticle(position, vel, mass);
+            else 
+                AddParticle(position, nullVel, mass);
         }
     }
 }
@@ -80,16 +87,4 @@ glm::mat4 SimulationSystem::GetViewMatrix() const
     ));
 
     return view;
-}
-
-float SimulationSystem::GetParticleRenderSize() const
-{
-    // Calculate the simulation width in simulation units
-    float simWidth = m_topRight.x - m_bottomLeft.x;
-
-    // Calculate simulation units per pixel
-    float scale = simWidth / static_cast<float>(m_WindowWidth);
-
-    // Convert particle radius (sim units) to pixels
-    return m_ParticleRadius / scale; 
 }

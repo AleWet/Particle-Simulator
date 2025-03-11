@@ -116,6 +116,7 @@ void ParticleRenderer::UpdateBuffers()
     const size_t particleCount = particles.size();
 
     if (particleCount == 0) {
+        std::cout << "current particle count is 0" << std::endl;
         return;
     }
 
@@ -130,10 +131,11 @@ void ParticleRenderer::UpdateBuffers()
         instanceData[i].position = particle.position;
 
         // Color based on velocity (blue -> green -> red)
-        float normalizedV = (std::min(glm::length(particle.velocity), 100.0f)) / 100.0f;
+        // Assume is max
+        float normalizedV = (std::min(glm::length(particle.velocity), 200.0f)) / 200.0f;
         normalizedV = glm::clamp(normalizedV, 0.0f, 1.0f);
 
-        // Use a continuous RGB gradient from blue -> cyan -> green -> yellow -> red
+        // Continuous RGB gradient from blue -> cyan -> green -> yellow -> red
         glm::vec3 color;
 
         if (normalizedV < 0.25f) {
@@ -158,33 +160,19 @@ void ParticleRenderer::UpdateBuffers()
         }
 
         instanceData[i].color = glm::vec4(color, 1.0f);
-        instanceData[i].size = m_Simulation.GetParticleRenderSize();
+        instanceData[i].size = m_Simulation.GetParticleRadius();
     }
 
-    // Update or recreate the instance buffer with new data
+    // Update existing buffer instead of recreating
     if (m_InstanceBuffer) {
-        m_InstanceBuffer->UnBind();
-        delete m_InstanceBuffer;
+        m_InstanceBuffer->Bind();
+        // Orphan the buffer if resizing is needed (better for streaming)
+        if (m_InstanceBuffer->GetSize() < sizeof(ParticleInstance) * particleCount) {
+            m_InstanceBuffer->Resize(sizeof(ParticleInstance) * particleCount * 2); // Double size
+        }
+        // Update buffer data
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(ParticleInstance) * particleCount, instanceData.data());
     }
-
-    // Create a new instance buffer with the updated data
-    m_InstanceBuffer = new VertexBuffer(instanceData.data(), sizeof(ParticleInstance) * particleCount);
-
-    // Rebind the attributes for the new instance buffer
-    m_VertexArray->Bind();
-    m_InstanceBuffer->Bind();
-
-    GLCall(glEnableVertexAttribArray(2));
-    GLCall(glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(ParticleInstance), (void*)0));
-    GLCall(glVertexAttribDivisor(2, 1));
-
-    GLCall(glEnableVertexAttribArray(3));
-    GLCall(glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(ParticleInstance), (void*)(2 * sizeof(float))));
-    GLCall(glVertexAttribDivisor(3, 1));
-
-    GLCall(glEnableVertexAttribArray(4));
-    GLCall(glVertexAttribPointer(4, 1, GL_FLOAT, GL_FALSE, sizeof(ParticleInstance), (void*)(6 * sizeof(float))));
-    GLCall(glVertexAttribDivisor(4, 1));
 
     m_VertexArray->UnBind();
     m_InstanceBuffer->UnBind();

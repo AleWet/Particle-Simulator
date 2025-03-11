@@ -37,7 +37,17 @@ void UpdatePhysics(SimulationSystem& sim, float deltaTime)
 
         glm::vec4 color(0.0f);
 
-
+        // Solve collision between particle and border
         SolveCollisionBorder(particleA, sim.GetBounds(), sim.GetParticleRadius());
+        
+        // Solve collision between particle and particle
+        for (int j = 0; j < N; j++)
+        {            
+            if (j != i)
+            {
+                Particle& particleB = particles[j];
+                SolveCollisionParticle(particleA, particleB, sim.GetBounds(), sim.GetParticleRadius());
+            }
+        }
     }
 }

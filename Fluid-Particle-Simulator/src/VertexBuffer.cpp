@@ -2,40 +2,46 @@
 #include "Renderer.h"
 #include <iostream>
 
-VertexBuffer::VertexBuffer(const void* data, unsigned int size)
-{
-    GLCall(glGenBuffers(1, &m_rendererID));
+VertexBuffer::VertexBuffer(const void* data, unsigned int size) {
+    GLCall(glGenBuffers(1, &m_RendererID));
+    m_Size = size;
 
-    // Add validation
-    if (data == nullptr || size == 0)
+    GLCall(glBindBuffer(GL_ARRAY_BUFFER, m_RendererID));
+    
+    if (size == 0) 
     {
-        std::cout << "Warning: Creating an empty buffer" << std::endl;
-        // Initialize with empty buffer
-        GLCall(glBindBuffer(GL_ARRAY_BUFFER, m_rendererID));
-        GLCall(glBufferData(GL_ARRAY_BUFFER, 1, nullptr, GL_STATIC_DRAW)); // Minimal valid buffer
+        std::cout << "Warning: Creating an empty buffer with size 0" << std::endl;
+        // Minimal valid buffer
+        GLCall(glBufferData(GL_ARRAY_BUFFER, 1, nullptr, GL_STATIC_DRAW));
     }
-    else
+    else 
     {
-        GLCall(glBindBuffer(GL_ARRAY_BUFFER, m_rendererID));
-        GLCall(glBufferData(GL_ARRAY_BUFFER, size, data, GL_STATIC_DRAW));
+        // Allocate full size even if data is nullptr
+        GLCall(glBufferData(GL_ARRAY_BUFFER, size, data, GL_DYNAMIC_DRAW)); // Use DYNAMIC_DRAW
     }
 
-    // Unbind the buffer to avoid state pollution (Gammò?)
     GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));
 }
 
 VertexBuffer::~VertexBuffer()
 {
-    GLCall(glDeleteBuffers(1, &m_rendererID));
+    GLCall(glDeleteBuffers(1, &m_RendererID));
 }
 
 void VertexBuffer::Bind() const
 {
-    GLCall(glBindBuffer(GL_ARRAY_BUFFER, m_rendererID));
+    GLCall(glBindBuffer(GL_ARRAY_BUFFER, m_RendererID));
 }
 
 void VertexBuffer::UnBind() const
 {
     GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));
+}
+
+void VertexBuffer::Resize(size_t newSize) {
+    m_Size = newSize;
+    Bind();
+    glBufferData(GL_ARRAY_BUFFER, newSize, nullptr, GL_DYNAMIC_DRAW); 
+    UnBind();
 }
 
