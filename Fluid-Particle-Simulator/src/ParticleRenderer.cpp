@@ -71,21 +71,36 @@ void ParticleRenderer::UpdateBuffers()
         // Set position directly from particle
         vertexData[i].position = particle.position;
 
-        // Color based on particle temperature (blue -> white -> red)
-        // Normalize temperature to 0-1 range for color calculation
-        float normalizedTemp = (particle.temperature - 20.0f) / 80.0f; // Assuming temp range 20-100
-        normalizedTemp = glm::clamp(normalizedTemp, 0.0f, 1.0f);
+        // Color based on velocity, not temperature (blue -> green -> red)
+        float normalizedV = (std::min(glm::length(particle.velocity), 100.0f)) / 100.0f;
+        normalizedV = glm::clamp(normalizedV, 0.0f, 1.0f);
 
-        if (normalizedTemp < 0.5f) {
-            // Blue to white gradient (cold to medium)
-            float t = normalizedTemp * 2.0f;
-            vertexData[i].color = glm::vec4(t, t, 1.0f, 0.8f);
+        // Use a continuous RGB gradient from blue -> cyan -> green -> yellow -> red
+        // (0,0,1) -> (0,1,1) -> (0,1,0) -> (1,1,0) -> (1,0,0)
+        glm::vec3 color;
+
+        if (normalizedV < 0.25f) {
+            // Blue to Cyan (0,0,1) -> (0,1,1)
+            float t = normalizedV / 0.25f;
+            color = glm::vec3(0.0f, t, 1.0f);
+        }
+        else if (normalizedV < 0.5f) {
+            // Cyan to Green (0,1,1) -> (0,1,0)
+            float t = (normalizedV - 0.25f) / 0.25f;
+            color = glm::vec3(0.0f, 1.0f, 1.0f - t);
+        }
+        else if (normalizedV < 0.75f) {
+            // Green to Yellow (0,1,0) -> (1,1,0)
+            float t = (normalizedV - 0.5f) / 0.25f;
+            color = glm::vec3(t, 1.0f, 0.0f);
         }
         else {
-            // White to red gradient (medium to hot)
-            float t = (normalizedTemp - 0.5f) * 2.0f;
-            vertexData[i].color = glm::vec4(1.0f, 1.0f - t, 1.0f - t, 0.8f);
+            // Yellow to Red (1,1,0) -> (1,0,0)
+            float t = (normalizedV - 0.75f) / 0.25f;
+            color = glm::vec3(1.0f, 1.0f - t, 0.0f);
         }
+
+        vertexData[i].color = glm::vec4(color, 1.0f);
         
         vertexData[i].size = m_Simulation.GetParticleRenderSize();
     }

@@ -64,8 +64,8 @@ int main(void)
 
         // SIMULATION PARAMETERS ----------------------------------------------------------
          
-        // // GENERAL : 
-
+        // // GENERAL 
+            
         // Set up simulation boundaries based on screen coordinates
         // I'll use normalized device coordinates for simplicity, then scale with view matrix
         float aspectRatio = (float)WINDOW_WIDTH / (float)WINDOW_HEIGHT;
@@ -74,7 +74,7 @@ int main(void)
         float simWidth = 2000.0f;  
 
         // Particle size (in simulation units) ==> this size is relative to the simulation units
-        unsigned int particleRadius = 30.0f;
+        unsigned int particleRadius = 5.0f;
         
         // Make simulation rectangle the same ratio of the screen for simplicity
         float simHeight = simWidth / aspectRatio; 
@@ -90,8 +90,8 @@ int main(void)
         float zoom = 0.7f;
 
         // Add particles in a grid pattern 
-        int rows = 10;
-        int cols = 10;
+        int rows = 90;
+        int cols = 80;
 
         // // PARTICLE CREATION
                   
