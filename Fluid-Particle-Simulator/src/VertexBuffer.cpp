@@ -2,7 +2,8 @@
 #include "Renderer.h"
 #include <iostream>
 
-VertexBuffer::VertexBuffer(const void* data, unsigned int size) {
+VertexBuffer::VertexBuffer(const void* data, unsigned int size, unsigned int usage)
+{
     GLCall(glGenBuffers(1, &m_RendererID));
     m_Size = size;
 
@@ -17,7 +18,7 @@ VertexBuffer::VertexBuffer(const void* data, unsigned int size) {
     else 
     {
         // Allocate full size even if data is nullptr
-        GLCall(glBufferData(GL_ARRAY_BUFFER, size, data, GL_DYNAMIC_DRAW)); // Use DYNAMIC_DRAW
+        GLCall(glBufferData(GL_ARRAY_BUFFER, size, data, usage)); 
     }
 
     GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));

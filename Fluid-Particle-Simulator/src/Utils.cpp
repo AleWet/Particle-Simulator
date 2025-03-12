@@ -82,7 +82,7 @@ void BoundsRenderer(glm::vec2 bottomLeft, glm::vec2 topRight, float borderWidth,
         };
 
         // Create and bind vertex buffer
-        borderVB = new VertexBuffer(vertices, 8 * 2 * sizeof(float));
+        borderVB = new VertexBuffer(vertices, 8 * 2 * sizeof(float), GL_STATIC_DRAW);
 
         // Set up vertex layout
         VertexBufferLayout layout;

@@ -74,7 +74,7 @@ int main(void)
         float simWidth = 2000.0f;  
 
         // Particle size (in simulation units) ==> this size is relative to the simulation units
-        float particleRadius = 40.0f;
+        float particleRadius = 5.0f;
         
         // Make simulation rectangle the same ratio of the screen for simplicity
         float simHeight = simWidth / aspectRatio; 
@@ -89,9 +89,9 @@ int main(void)
         // Set zoom
         float zoom = 0.7f;
 
-        // Add particles in a grid pattern 
-        int rows = 10;
-        int cols = 9;
+        // Add particles in a grid pattern
+        int rows = 140;
+        int cols = 50;
 
         // // PARTICLE CREATION
                   
@@ -134,9 +134,6 @@ int main(void)
         // initialize shader outside of renderer (easier but not permanent)
         Shader shader(shaderPath);
 
-        // Bind shader
-        shader.Bind();
-
         // initialize particle renderer
         ParticleRenderer renderer(sim, shader);
 
@@ -156,7 +153,9 @@ int main(void)
             // Set zoom for simulation
             sim.SetZoom(zoom);
 
-            glm::mat4 MVP = sim.GetProjMatrix() * sim.GetViewMatrix();
+            // Setup border mvp, this in the future will be inside 
+            // particle renderer of sim system
+            glm::mat4 borderMVP = sim.GetProjMatrix() * sim.GetViewMatrix();
 
             // Update physics before rendering
             int steps = timeManager.update();
@@ -170,15 +169,15 @@ int main(void)
             renderer.Render();
 
             // Render simulation borders
-            // This implementation isn't the best, this should be inside 
-            // the renderer object or the simulation system
-            BoundsRenderer(sim.GetBounds()[0], sim.GetBounds()[1], borderWidth, simBorderColor, MVP);
+            // This implementation isn't the best but good enough
+            BoundsRenderer(sim.GetBounds()[0], sim.GetBounds()[1], borderWidth, simBorderColor, borderMVP);
 
             // Display FPS
-            if (++counter > 100)
+            if (++counter > 10)
             {
                 std::string title = "Particle Simulation - FPS: " +
-                    std::to_string(static_cast<int>(timeManager.getLastfps()));
+                    std::to_string(timeManager.getLastfps()) + " / MSPF " +
+                    std::to_string(timeManager.getLastFrameTimeMs());
                 glfwSetWindowTitle(window, title.c_str());
                 counter = 0;
             }

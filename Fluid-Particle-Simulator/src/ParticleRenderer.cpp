@@ -57,7 +57,7 @@ void ParticleRenderer::InitBuffers()
     };
 
     // Create vertex buffer for the quad
-    m_VertexBuffer = new VertexBuffer(quadVertices, sizeof(quadVertices));
+    m_VertexBuffer = new VertexBuffer(quadVertices, sizeof(quadVertices), GL_STREAM_DRAW);
 
     // Create index buffer
     m_IndexBuffer = new IndexBuffer(quadIndices, 6);
@@ -76,7 +76,7 @@ void ParticleRenderer::InitBuffers()
 
     // Create an empty instance buffer initially (will be updated in UpdateBuffers)
     const size_t initialBufferSize = sizeof(ParticleInstance) * 1000; // Allocate for 1000 particles initially
-    m_InstanceBuffer = new VertexBuffer(nullptr, initialBufferSize);
+    m_InstanceBuffer = new VertexBuffer(nullptr, initialBufferSize, GL_STREAM_DRAW);
 
     // Set up instance buffer layout
     VertexBufferLayout instanceLayout;
@@ -160,22 +160,22 @@ void ParticleRenderer::UpdateBuffers()
         }
 
         instanceData[i].color = glm::vec4(color, 1.0f);
-        instanceData[i].size = m_Simulation.GetParticleRadius();
+
+        // The random +2 is to avoid the annoying particle hovering over eachother bug
+        // This is just for visuals. With particles radius > 10.0f add 1.0f to this value
+        instanceData[i].size = m_Simulation.GetParticleRadius();  
     }
 
     // Update existing buffer instead of recreating
     if (m_InstanceBuffer) {
         m_InstanceBuffer->Bind();
-        // Orphan the buffer if resizing is needed (better for streaming)
-        if (m_InstanceBuffer->GetSize() < sizeof(ParticleInstance) * particleCount) {
-            m_InstanceBuffer->Resize(sizeof(ParticleInstance) * particleCount * 2); // Double size
-        }
-        // Update buffer data
+        // Orphan the buffer every frame for streaming
+        glBufferData(GL_ARRAY_BUFFER, sizeof(ParticleInstance) * particleCount, nullptr, GL_STREAM_DRAW);
         glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(ParticleInstance) * particleCount, instanceData.data());
+        m_InstanceBuffer->UnBind();
     }
 
     m_VertexArray->UnBind();
-    m_InstanceBuffer->UnBind();
 }
 
 void ParticleRenderer::Render()
@@ -199,7 +199,7 @@ void ParticleRenderer::Render()
     // Draw instanced quads
     GLCall(glDrawElementsInstanced(
         GL_TRIANGLES,
-        6,                                             // 6 indices per quad (2 triangles)
+        6,                                                       // 6 indices per quad (2 triangles)
         GL_UNSIGNED_INT,
         0,
         static_cast<GLsizei>(m_Simulation.GetParticles().size()) // Number of instances

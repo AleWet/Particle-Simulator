@@ -1,7 +1,7 @@
 #include "SolveCollision.h"
 
 // Value between 0 (inelastic) and 1 (perfectly elastic)
-const float BOUNCINESS = 0.9f;
+const float BOUNCINESS = 1.0f;
 
 void SolveCollisionBorder(Particle& particleA,
     const std::vector<glm::vec2> simBounds,
@@ -99,8 +99,8 @@ void SolveCollisionParticle(Particle& particleA, Particle& particleB,
         // Only resolve if particles are moving toward each other
         if (velocityAlongNormal < 0)
         {
-            // Calculate coefficient of restitution (bounciness)
-            float restitution = BOUNCINESS; 
+            // Calculate coefficient of restitution
+            float restitution = BOUNCINESS;
 
             // Calculate impulse scalar
             float impulseScalar = -(1.0f + restitution) * velocityAlongNormal;

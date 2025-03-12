@@ -6,7 +6,7 @@ private:
 	unsigned int m_RendererID;
 	size_t m_Size;
 public:
-	VertexBuffer(const void* data, unsigned int size);
+	VertexBuffer(const void* data, unsigned int size, unsigned int usage);
 	~VertexBuffer();
 
 	void Bind() const;
