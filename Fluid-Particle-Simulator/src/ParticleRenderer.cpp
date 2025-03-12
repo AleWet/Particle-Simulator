@@ -109,21 +109,10 @@ void ParticleRenderer::InitBuffers()
     m_IndexBuffer->UnBind();
 }
 
-void ParticleRenderer::UpdateBuffers()
+void ParticleRenderer::UpdateInstanceDataColorVelocity(std::vector<ParticleInstance>& instanceData, 
+                                                    const std::vector<Particle>& particles)
 {
-    // Get the particles from the simulation system
-    const std::vector<Particle>& particles = m_Simulation.GetParticles();
-    const size_t particleCount = particles.size();
-
-    if (particleCount == 0) {
-        std::cout << "current particle count is 0" << std::endl;
-        return;
-    }
-
-    // Create a vector of ParticleInstance for the updated data
-    std::vector<ParticleInstance> instanceData(particleCount);
-
-    // Update instance data for each particle
+    size_t particleCount = instanceData.size();
     for (size_t i = 0; i < particleCount; i++) {
         const Particle& particle = particles[i];
 
@@ -131,7 +120,7 @@ void ParticleRenderer::UpdateBuffers()
         instanceData[i].position = particle.position;
 
         // Color based on velocity (blue -> green -> red)
-        // Assume is max
+        // Assume 200.0 units / second is max
         float normalizedV = (std::min(glm::length(particle.velocity), 200.0f)) / 200.0f;
         normalizedV = glm::clamp(normalizedV, 0.0f, 1.0f);
 
@@ -163,8 +152,26 @@ void ParticleRenderer::UpdateBuffers()
 
         // The random +2 is to avoid the annoying particle hovering over eachother bug
         // This is just for visuals. With particles radius > 10.0f add 1.0f to this value
-        instanceData[i].size = m_Simulation.GetParticleRadius();  
+        instanceData[i].size = m_Simulation.GetParticleRadius();
     }
+}
+
+void ParticleRenderer::UpdateBuffers()
+{
+    // Get the particles from the simulation system
+    const std::vector<Particle>& particles = m_Simulation.GetParticles();
+    const size_t particleCount = particles.size();
+
+    if (particleCount == 0) {
+        std::cout << "current particle count is 0" << std::endl;
+        return;
+    }
+
+    // Create a vector of ParticleInstance for the updated data
+    std::vector<ParticleInstance> instanceData(particleCount);
+
+    // Update instance data for each particle
+    UpdateInstanceDataColorVelocity(instanceData, particles);
 
     // Update existing buffer instead of recreating
     if (m_InstanceBuffer) {
@@ -181,9 +188,8 @@ void ParticleRenderer::UpdateBuffers()
 void ParticleRenderer::Render()
 {
     // No particles to render
-    if (m_Simulation.GetParticles().empty()) {
+    if (m_Simulation.GetParticles().empty())
         return;
-    }
 
     // Create MVP for particles
     glm::mat4 particleMVP = m_Simulation.GetProjMatrix() * m_Simulation.GetViewMatrix();

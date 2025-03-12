@@ -17,7 +17,7 @@ void UpdatePhysics(SimulationSystem& sim, float deltaTime)
         particleA.force = particleA.mass * G;
 
         // Apply simple damping (air resistance)
-        particleA.force -= particleA.velocity * 0.1f;
+        //particleA.force -= particleA.velocity * 0.1f;
 
         // Update velocity based on force
         particleA.velocity += (particleA.force / particleA.mass) * deltaTime;

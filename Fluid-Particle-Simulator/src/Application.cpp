@@ -8,7 +8,6 @@
 #include "Texture.h"
 #include "core/Time.h"
 #include "ParticleRenderer.h"
-#include "Renderer.h" // not needed
 #include "Utils.h"
 
 // other includes are in Utils.h
@@ -74,7 +73,7 @@ int main(void)
         float simWidth = 2000.0f;  
 
         // Particle size (in simulation units) ==> this size is relative to the simulation units
-        float particleRadius = 5.0f;
+        float particleRadius = 40.0f;
         
         // Make simulation rectangle the same ratio of the screen for simplicity
         float simHeight = simWidth / aspectRatio; 
@@ -90,8 +89,8 @@ int main(void)
         float zoom = 0.7f;
 
         // Add particles in a grid pattern
-        int rows = 140;
-        int cols = 50;
+        int rows = 10 ;
+        int cols = 9;
 
         // // PARTICLE CREATION
                   

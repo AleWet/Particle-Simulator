@@ -27,6 +27,7 @@ public:
     ~ParticleRenderer();
 
     void InitBuffers();
+    void UpdateInstanceDataColorVelocity(std::vector<ParticleInstance>& data, const std::vector<Particle>& particles);
     void UpdateBuffers();
     void Render();
 };
