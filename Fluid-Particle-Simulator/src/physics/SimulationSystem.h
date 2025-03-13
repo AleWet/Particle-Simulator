@@ -4,6 +4,7 @@
 #include "Particle.h"
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
+#include "SpatialGrid.h"
 
 // Object to control the simulation
 class SimulationSystem
@@ -17,6 +18,8 @@ private:
     float m_SimHeight;
     float m_SimWidth;
     unsigned int m_WindowWidth;
+    bool m_UseSpatialGrid = true;
+    SpatialGrid* m_SpatialGrid = nullptr;
 
 public:
     // bottomLeft is the bottom-left corner of the simulation rectangle and
@@ -73,4 +76,12 @@ public:
     // Return window width
     void SetWindowWidth(unsigned int width) { m_WindowWidth = width; }
 
+    bool IsUsingSpatialGrid() const { return m_UseSpatialGrid; }
+    void SetUseSpatialGrid(bool use) { m_UseSpatialGrid = use; }
+
+    // Initialize the spatial grid
+    void InitSpatialGrid();
+
+    // Get the spatial grid
+    SpatialGrid* GetSpatialGrid() { return m_SpatialGrid; }
 };

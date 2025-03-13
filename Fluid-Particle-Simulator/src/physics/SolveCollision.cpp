@@ -74,7 +74,7 @@ void SolveCollisionParticle(Particle& particleA, Particle& particleB,
         // Prevent division by zero
         if (distance < 1e-5f) return;
 
-        // Move particles apart with exact separation
+        // Move particles apart 
         const float separation = 2.0f * particleRadius;
         glm::vec2 correction = (separation - distance) * 0.5f * collisionNormal;
         particleA.position += correction;

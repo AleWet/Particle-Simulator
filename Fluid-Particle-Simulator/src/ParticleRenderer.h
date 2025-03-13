@@ -21,6 +21,7 @@ private:
     VertexBuffer* m_VertexBuffer;    // For the quad vertices
     VertexBuffer* m_InstanceBuffer;  // For the particle instance data
     IndexBuffer* m_IndexBuffer;      // For the quad indices
+    std::vector<ParticleInstance> m_InstanceData; // Optimize memory allocation
 
 public:
     ParticleRenderer(const SimulationSystem& simulation, const Shader& shader);

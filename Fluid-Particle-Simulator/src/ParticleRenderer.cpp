@@ -158,31 +158,37 @@ void ParticleRenderer::UpdateInstanceDataColorVelocity(std::vector<ParticleInsta
 
 void ParticleRenderer::UpdateBuffers()
 {
-    // Get the particles from the simulation system
+    // Get particles from simulation
     const std::vector<Particle>& particles = m_Simulation.GetParticles();
     const size_t particleCount = particles.size();
-
+    
     if (particleCount == 0) {
-        std::cout << "current particle count is 0" << std::endl;
         return;
     }
-
-    // Create a vector of ParticleInstance for the updated data
-    std::vector<ParticleInstance> instanceData(particleCount);
-
-    // Update instance data for each particle
-    UpdateInstanceDataColorVelocity(instanceData, particles);
-
-    // Update existing buffer instead of recreating
-    if (m_InstanceBuffer) {
-        m_InstanceBuffer->Bind();
-        // Orphan the buffer every frame for streaming
-        glBufferData(GL_ARRAY_BUFFER, sizeof(ParticleInstance) * particleCount, nullptr, GL_STREAM_DRAW);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(ParticleInstance) * particleCount, instanceData.data());
-        m_InstanceBuffer->UnBind();
+    
+    // Resize only if needed, preserving capacity
+    if (m_InstanceData.size() < particleCount) {
+        m_InstanceData.resize(particleCount);
     }
-
-    m_VertexArray->UnBind();
+    
+    // Update instance data
+    UpdateInstanceDataColorVelocity(m_InstanceData, particles);
+    
+    // Update buffer
+    m_InstanceBuffer->Bind();
+    size_t dataSize = sizeof(ParticleInstance) * particleCount;
+    
+    // Only reallocate if buffer is too small
+    if (dataSize > m_InstanceBuffer->GetSize()) {
+        // Allocate with some growth factor to avoid frequent resizing
+        size_t newSize = dataSize * 1.5;
+        glBufferData(GL_ARRAY_BUFFER, newSize, nullptr, GL_STREAM_DRAW);
+        m_InstanceBuffer->Resize(newSize);
+    }
+    
+    // Update the data
+    glBufferSubData(GL_ARRAY_BUFFER, 0, dataSize, m_InstanceData.data());
+    m_InstanceBuffer->UnBind();
 }
 
 void ParticleRenderer::Render()

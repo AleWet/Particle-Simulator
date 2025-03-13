@@ -31,7 +31,7 @@ void SimulationSystem::AddParticleGrid(int rows, int cols, glm::vec2 spacing, bo
     float stepX = 2.0f * m_ParticleRadius + spacing.x;
     float stepY = 2.0f * m_ParticleRadius + spacing.y;
 
-    glm::vec2 vel = glm::vec2(10.0f, -100.0f);
+    glm::vec2 vel = glm::vec2(10.0f, -10.0f);
     glm::vec2 nullVel = glm::vec2(0.0f, 0.0f);
 
     // Generate particles in a grid pattern
@@ -87,4 +87,22 @@ glm::mat4 SimulationSystem::GetViewMatrix() const
     ));
 
     return view;
+}
+
+
+
+void SimulationSystem::InitSpatialGrid()
+{
+    if (m_SpatialGrid) {
+        delete m_SpatialGrid;
+    }
+    // 
+    // 
+    // size should be slightly larger than twice the particle diameter
+    float cellSize = 3.1f * 2.0f * m_ParticleRadius;
+    auto simBoundsd = GetBounds();
+    m_SpatialGrid = new SpatialGrid(simBoundsd[0], simBoundsd[1], cellSize);
+
+    
+    
 }

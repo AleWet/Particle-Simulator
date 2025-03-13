@@ -73,14 +73,14 @@ int main(void)
         float simWidth = 2000.0f;  
 
         // Particle size (in simulation units) ==> this size is relative to the simulation units
-        float particleRadius = 40.0f;
+        float particleRadius = 20.0f;
         
         // Make simulation rectangle the same ratio of the screen for simplicity
         float simHeight = simWidth / aspectRatio; 
 
         // Define simulation boundaries centered on the origin
         glm::vec2 bottomLeft(-simWidth / 2, -simHeight / 2);
-        glm::vec2 topRight(simWidth / 2, simHeight / 2);
+        glm::vec2 topRight(simWidth/ 2, simHeight / 2);
 
         // Distance from simulation border and window
         float simulationBorderOffset = 1.0f;
@@ -88,9 +88,9 @@ int main(void)
         // Set zoom
         float zoom = 0.7f;
 
-        // Add particles in a grid pattern
-        int rows = 10 ;
-        int cols = 9;
+        // Add particles in a grid pattern (800 particles is current limit)
+        int rows = 20;
+        int cols = 10;
 
         // // PARTICLE CREATION
                   
@@ -105,6 +105,8 @@ int main(void)
         glm::vec4 gridBorderColor(0.0f, 1.0f, 0.0f, 0.5f); // Green
         float borderWidth = 2.0f;
 
+        // // OPTIMISATIONS
+        bool useSpacePartitioning = true;
 
 
         // --------------------------------------------------------------------------------
@@ -159,7 +161,7 @@ int main(void)
             // Update physics before rendering
             int steps = timeManager.update();
             for (int i = 0; i < steps; i++)
-                UpdatePhysics(sim, timeManager.getFixedDeltaTime());
+                UpdatePhysics(sim, timeManager.getFixedDeltaTime(), useSpacePartitioning);
 
             // Update buffers with new particle data
             renderer.UpdateBuffers();
@@ -172,7 +174,7 @@ int main(void)
             BoundsRenderer(sim.GetBounds()[0], sim.GetBounds()[1], borderWidth, simBorderColor, borderMVP);
 
             // Display FPS
-            if (++counter > 10)
+            if (++counter > 50)
             {
                 std::string title = "Particle Simulation - FPS: " +
                     std::to_string(timeManager.getLastfps()) + " / MSPF " +

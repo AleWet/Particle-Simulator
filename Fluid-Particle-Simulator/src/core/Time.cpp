@@ -2,7 +2,7 @@
 #include <cmath>
 #include <algorithm>
 
-const int MAXSTEPS = 1000;
+const int MAXSTEPS = 100;
 
 Time::Time(float fixedDeltaTime)
     : m_FixedDeltaTime(fixedDeltaTime), m_LastTime(glfwGetTime()), m_Accumulator(0.0f), m_LastFrameTime(0.0f)
