@@ -11,7 +11,7 @@ private:
     int m_GridWidth;        // Number of cells along X-axis
     int m_GridHeight;       // Number of cells along Y-axis
     std::vector<std::vector<int>> m_Grid;  // 1D grid (flattened 2D)
-    size_t m_CollisionPairCapacity = 10000;
+    int m_ParticleCount;
 
     // Converts a world position to grid indices
     glm::ivec2 GetCellIndices(const glm::vec2& position) const {
@@ -33,8 +33,8 @@ private:
 
 public:
     // Constructor with simulation bounds and cell size
-    SpatialGrid(const glm::vec2& minBound, const glm::vec2& maxBound, float cellSize)
-        : m_CellSize(cellSize), m_MinBound(minBound), m_MaxBound(maxBound)
+    SpatialGrid(const glm::vec2& minBound, const glm::vec2& maxBound, float cellSize, int particleCount)
+        : m_CellSize(cellSize), m_MinBound(minBound), m_MaxBound(maxBound), m_ParticleCount(particleCount)
     {
         // Calculate grid dimensions
         m_GridWidth = static_cast<int>((maxBound.x - minBound.x) / cellSize) + 1;
@@ -48,58 +48,60 @@ public:
     void Clear() {
         for (auto& cell : m_Grid) {
             // Empty cells but retain memory
-            cell.clear(); 
+            cell.clear();
         }
     }
 
     // Insert a particle into the grid
-    void InsertParticle(int particleIndex, const glm::vec2& position) {
+    void InsertParticle(int particleIndex, const glm::vec2& position)
+    {
         glm::ivec2 cell = GetCellIndices(position);
         m_Grid[To1DIndex(cell)].push_back(particleIndex);
     }
 
-    // Get potential collision pairs
-    std::vector<std::pair<int, int>> GetPotentialCollisionPairs() {
+    std::vector<std::pair<int, int>> GetPotentialCollisionPairs()
+    {
+        // Estimate pairs: 4 neighbors * avg 10 particles per cell * 4 interactions
+        const size_t estimatedPairs = m_ParticleCount * 4;
         std::vector<std::pair<int, int>> pairs;
-        pairs.reserve(m_CollisionPairCapacity); // Start with preallocated capacity
+        pairs.reserve(estimatedPairs); // Single allocation upfront
 
-        // Lambda to handle pair insertion with dynamic growth
-        auto addPair = [&](int a, int b) {
-            if (pairs.size() >= pairs.capacity()) {
-                // Grow capacity by 1.5x to minimize reallocations
-                m_CollisionPairCapacity = static_cast<size_t>(m_CollisionPairCapacity * 1.5);
-                pairs.reserve(m_CollisionPairCapacity);
-            }
-            pairs.emplace_back(a, b);
-            };
+        // Check only these neighbors to avoid duplicates
+        const glm::ivec2 neighbors[] = { {1, 0}, {1, 1}, {0, 1} };
 
-        // Iterate through all grid cells
-        for (int y = 0; y < m_GridHeight; ++y) {
-            for (int x = 0; x < m_GridWidth; ++x) {
+        for (int y = 0; y < m_GridHeight; ++y)
+        {
+            for (int x = 0; x < m_GridWidth; ++x)
+            {
                 const glm::ivec2 currentCell(x, y);
                 const int cellIndex = To1DIndex(currentCell);
                 const auto& particles = m_Grid[cellIndex];
 
-                // Check pairs within the same cell
-                for (size_t i = 0; i < particles.size(); ++i) {
-                    for (size_t j = i + 1; j < particles.size(); ++j) {
-                        addPair(particles[i], particles[j]);
+                // Intra-cell pairs (i < j to avoid duplicates)
+                for (size_t i = 0; i < particles.size(); ++i)
+                {
+                    for (size_t j = i + 1; j < particles.size(); ++j)
+                    {
+                        pairs.emplace_back(particles[i], particles[j]);
                     }
                 }
 
-                // Check neighboring cells (right, top-right, top, top-left)
-                const glm::ivec2 neighbors[] = { {1, 0}, {1, 1}, {0, 1}, {-1, 1} };
-                for (const auto& offset : neighbors) {
+                // Inter-cell pairs (no duplicates)
+                for (const auto& offset : neighbors)
+                {
                     const glm::ivec2 neighborCell = currentCell + offset;
                     if (neighborCell.x >= 0 && neighborCell.x < m_GridWidth &&
-                        neighborCell.y >= 0 && neighborCell.y < m_GridHeight) {
+                        neighborCell.y >= 0 && neighborCell.y < m_GridHeight)
+                    {
                         const int neighborIndex = To1DIndex(neighborCell);
                         const auto& neighborParticles = m_Grid[neighborIndex];
 
-                        // Check pairs between current and neighbor cells
-                        for (int a : particles) {
-                            for (int b : neighborParticles) {
-                                addPair(a, b);
+                        // Cross-check all particles
+                        for (int a : particles)
+                        {
+                            for (int b : neighborParticles)
+                            {
+                                pairs.emplace_back(a, b);
                             }
                         }
                     }

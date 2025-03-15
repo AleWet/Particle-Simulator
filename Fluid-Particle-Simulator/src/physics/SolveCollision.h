@@ -7,7 +7,8 @@ void SolveCollisionBorder(Particle& particleA,
     float particleRadius);
 
 // Solve collision between particle A and particle B.
-// At the moment this uses a naive approach but will be improved
+// At the moment this function doesn't use the GLM vector library because 
+// it was slowing down my code too much 
 void SolveCollisionParticle(Particle& particleA, Particle& particleB,
     const Bounds bounds,
     float particleRadius);

@@ -193,10 +193,10 @@ void ParticleRenderer::UpdateBuffers()
     }
     
     // Update instance data
-    //UpdateInstanceDataColorVelocity(m_InstanceData, particles);
+    UpdateInstanceDataColorVelocity(m_InstanceData, particles);
 
     // DEBUG
-    UpdateInstanceDataPlaneColor(m_InstanceData, particles);
+    //UpdateInstanceDataPlaneColor(m_InstanceData, particles);
     
     // Update buffer
     m_InstanceBuffer->Bind();

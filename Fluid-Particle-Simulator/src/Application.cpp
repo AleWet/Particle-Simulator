@@ -122,9 +122,9 @@ int main(void)
         // Set zoom
         float zoom = 0.7f;
 
-        // Add particles in a grid pattern (2800 particles is current limit)
+        // Add particles in a grid pattern (4500 particles is current limit)
         int rows = 50;
-        int cols = 55;
+        int cols = 90;
 
         // // PARTICLE CREATION
                   

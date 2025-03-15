@@ -50,69 +50,53 @@ void SolveCollisionBorder(Particle& particleA,
 }
 
 void SolveCollisionParticle(Particle& particleA, Particle& particleB,
-    const Bounds bounds,
-    float particleRadius)
+    const Bounds bounds, float particleRadius)
 {
-    // Calculate vector between particle centers
-    glm::vec2 positionDelta = particleA.position - particleB.position;
+    // Manual position delta and distance calculation
+    const float dx = particleA.position.x - particleB.position.x;
+    const float dy = particleA.position.y - particleB.position.y;
+    const float distanceSquared = dx * dx + dy * dy;
+    const float minDistanceSquared = 4.0f * particleRadius * particleRadius;
 
-    // Calculate squared distance between particles (optimization to avoid square root)
-    float distanceSquared = glm::dot(positionDelta, positionDelta);
-
-    // Calculate squared minimum distance before particles collide
-    float minDistanceSquared = 4.0f * particleRadius * particleRadius;
-
-    // Check if particles are overlapping
     if (distanceSquared < minDistanceSquared)
     {
-        // Calculate actual distance between particle centers
-        float distance = sqrt(distanceSquared);
-
-        // Normalize the position delta vector
-        glm::vec2 collisionNormal = positionDelta / distance;
-
-        // Prevent division by zero
+        const float distance = sqrt(distanceSquared);
         if (distance < 1e-5f) return;
 
-        // Move particles apart 
-        const float separation = 2.0f * particleRadius;
-        glm::vec2 correction = (separation - distance) * 0.5f * collisionNormal;
-        particleA.position += correction;
-        particleB.position -= correction;
+        // Manually normalize collision normal (avoid glm::vec2 division)
+        const float invDistance = 1.0f / distance;
+        const float nx = dx * invDistance;
+        const float ny = dy * invDistance;
 
-        // Calculate overlap amount
-        float overlap = 2.0f * particleRadius - distance;
+        // Position correction
+        const float overlap = 2.0f * particleRadius - distance;
+        const float totalMass = particleA.mass + particleB.mass;
+        const float ratioA = particleB.mass / totalMass;
+        const float ratioB = particleA.mass / totalMass;
 
-        // Resolve position overlap by moving particles apart proportional to their masses
-        float totalMass = particleA.mass + particleB.mass;
-        float ratioA = particleB.mass / totalMass;
-        float ratioB = particleA.mass / totalMass;
+        particleA.position.x += nx * overlap * ratioA;
+        particleA.position.y += ny * overlap * ratioA;
+        particleB.position.x -= nx * overlap * ratioB;
+        particleB.position.y -= ny * overlap * ratioB;
 
-        // Move particles apart to resolve overlap
-        particleA.position += collisionNormal * overlap * ratioA;
-        particleB.position -= collisionNormal * overlap * ratioB;
+        // Velocity resolution
+        const float vx = particleA.velocity.x - particleB.velocity.x;
+        const float vy = particleA.velocity.y - particleB.velocity.y;
+        const float velocityAlongNormal = vx * nx + vy * ny;
 
-        // Calculate relative velocity along collision normal
-        glm::vec2 relativeVelocity = particleA.velocity - particleB.velocity;
-        float velocityAlongNormal = glm::dot(relativeVelocity, collisionNormal);
-
-        // Only resolve if particles are moving toward each other
         if (velocityAlongNormal < 0)
         {
-            // Calculate coefficient of restitution
-            float restitution = BOUNCINESS;
+            const float restitution = BOUNCINESS;
+            const float impulseScalar = -(1.0f + restitution) * velocityAlongNormal;
+            const float impulse = impulseScalar / (1.0f / particleA.mass + 1.0f / particleB.mass);
 
-            // Calculate impulse scalar
-            float impulseScalar = -(1.0f + restitution) * velocityAlongNormal;
-            impulseScalar /= (1.0f / particleA.mass) + (1.0f / particleB.mass);
+            particleA.velocity.x += impulse * nx / particleA.mass;
+            particleA.velocity.y += impulse * ny / particleA.mass;
+            particleB.velocity.x -= impulse * nx / particleB.mass;
+            particleB.velocity.y -= impulse * ny / particleB.mass;
 
-            // Apply impulse
-            glm::vec2 impulse = impulseScalar * collisionNormal;
-            particleA.velocity += impulse / particleA.mass;
-            particleB.velocity -= impulse / particleB.mass;
-
-            // Add temperature increase based on collision intensity
-            float collisionIntensity = glm::length(impulse) * 0.01f;
+            // Temperature update (optional)
+            const float collisionIntensity = sqrt(impulse * impulse) * 0.01f;
             particleA.temperature = std::min(100.0f, particleA.temperature + collisionIntensity);
             particleB.temperature = std::min(100.0f, particleB.temperature + collisionIntensity);
         }

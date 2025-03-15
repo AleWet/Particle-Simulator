@@ -103,5 +103,5 @@ void SimulationSystem::InitSpatialGrid()
     // size should be slightly larger than twice the particle diameter
     float cellSize = 3.1f * 2.0f * m_ParticleRadius;
     const auto& bounds = GetBounds();
-    m_SpatialGrid = new SpatialGrid(bounds.bottomLeft, bounds.topRight, cellSize);
+    m_SpatialGrid = new SpatialGrid(bounds.bottomLeft, bounds.topRight, cellSize, m_Particles.size());
 }

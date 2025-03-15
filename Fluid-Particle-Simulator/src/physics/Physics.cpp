@@ -58,7 +58,8 @@ void UpdatePhysics(SimulationSystem& sim, float deltaTime, bool useSpacePart)
         static SpatialGrid grid(
             sim.GetBounds().bottomLeft,
             sim.GetBounds().topRight,
-            2.1f * 2.0f * sim.GetParticleRadius() // Cell size (compute once)
+            2.1f * 2.0f * sim.GetParticleRadius(), // Cell size (compute once)
+            N
         );
 
         grid.Clear();
@@ -70,8 +71,10 @@ void UpdatePhysics(SimulationSystem& sim, float deltaTime, bool useSpacePart)
 
         // Get collision pairs and resolve collisions
         std::vector<std::pair<int, int>> collisionPairs = grid.GetPotentialCollisionPairs();
-        for (const auto& pair : collisionPairs) {
+
+        // Solve collision pairs
+        for (const auto& pair : collisionPairs) 
             SolveCollisionParticle(particles[pair.first], particles[pair.second], sim.GetBounds(), sim.GetParticleRadius());
-        }
+        
     }
 }
