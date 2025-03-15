@@ -1,7 +1,7 @@
 #pragma once
-
 #include <vector>
 #include <glm/glm.hpp>
+
 
 class SpatialGrid {
 private:
@@ -11,10 +11,12 @@ private:
     int m_GridWidth;        // Number of cells along X-axis
     int m_GridHeight;       // Number of cells along Y-axis
     std::vector<std::vector<int>> m_Grid;  // 1D grid (flattened 2D)
-    int m_ParticleCount;
+    std::vector<std::pair<int, int>> m_CollisionPairs; // Cache collision pairs vector
+    int m_ParticleCount;    
 
     // Converts a world position to grid indices
-    glm::ivec2 GetCellIndices(const glm::vec2& position) const {
+    glm::ivec2 GetCellIndices(const glm::vec2& position) const 
+    {
         int x = static_cast<int>((position.x - m_MinBound.x) / m_CellSize);
         int y = static_cast<int>((position.y - m_MinBound.y) / m_CellSize);
 
@@ -27,7 +29,8 @@ private:
     }
 
     // Converts 2D grid indices to a 1D index
-    int To1DIndex(const glm::ivec2& cell) const {
+    int To1DIndex(const glm::ivec2& cell) const 
+    {
         return cell.x + cell.y * m_GridWidth;
     }
 
@@ -45,11 +48,26 @@ public:
     }
 
     // Clear all cells
-    void Clear() {
+    void Clear() 
+    {
         for (auto& cell : m_Grid) {
             // Empty cells but retain memory
             cell.clear();
         }
+    }
+
+    // Check if it makes sense to add particle pair (a,b) to the physics check
+    inline bool AreParticlesCloseEnough(int a, int b, const std::vector<Particle>& particles, float maxDistance)
+    {
+        const auto& posA = particles[a].position;
+        const auto& posB = particles[b].position;
+
+        // Fast squared distance check (avoid sqrt)
+        float dx = posA.x - posB.x;
+        float dy = posA.y - posB.y;
+        float distSquared = dx * dx + dy * dy;
+
+        return distSquared <= maxDistance * maxDistance;
     }
 
     // Insert a particle into the grid
@@ -59,15 +77,15 @@ public:
         m_Grid[To1DIndex(cell)].push_back(particleIndex);
     }
 
-    std::vector<std::pair<int, int>> GetPotentialCollisionPairs()
+    std::vector<std::pair<int, int>>& GetPotentialCollisionPairs(const std::vector<Particle>& particles, float maxDistance)
     {
-        // Estimate pairs: 4 neighbors * avg 10 particles per cell * 4 interactions
-        const size_t estimatedPairs = m_ParticleCount * 4;
-        std::vector<std::pair<int, int>> pairs;
-        pairs.reserve(estimatedPairs); // Single allocation upfront
+        // Clear previous results but keep capacity
+        m_CollisionPairs.clear();
+        // Pre-allocate memory to avoid reallocations
+        m_CollisionPairs.reserve(m_ParticleCount * 4);
 
         // Check only these neighbors to avoid duplicates
-        const glm::ivec2 neighbors[] = { {1, 0}, {1, 1}, {0, 1} };
+        const glm::ivec2 neighbors[] = { {1, 0}, {1, 1}, {0, 1}};
 
         for (int y = 0; y < m_GridHeight; ++y)
         {
@@ -75,18 +93,25 @@ public:
             {
                 const glm::ivec2 currentCell(x, y);
                 const int cellIndex = To1DIndex(currentCell);
-                const auto& particles = m_Grid[cellIndex];
+                const auto& cellParticles = m_Grid[cellIndex];
 
-                // Intra-cell pairs (i < j to avoid duplicates)
-                for (size_t i = 0; i < particles.size(); ++i)
+                // Intra-cell pairs (particles within the same cell)
+                for (size_t i = 0; i < cellParticles.size(); ++i)
                 {
-                    for (size_t j = i + 1; j < particles.size(); ++j)
+                    for (size_t j = i + 1; j < cellParticles.size(); ++j)
                     {
-                        pairs.emplace_back(particles[i], particles[j]);
+                        int particleA = cellParticles[i];
+                        int particleB = cellParticles[j];
+
+                        // Verify particles are within interaction distance
+                        if (AreParticlesCloseEnough(particleA, particleB, particles, maxDistance))
+                        {
+                            m_CollisionPairs.emplace_back(particleA, particleB);
+                        }
                     }
                 }
 
-                // Inter-cell pairs (no duplicates)
+                // Inter-cell pairs (particles from neighboring cells)
                 for (const auto& offset : neighbors)
                 {
                     const glm::ivec2 neighborCell = currentCell + offset;
@@ -96,12 +121,15 @@ public:
                         const int neighborIndex = To1DIndex(neighborCell);
                         const auto& neighborParticles = m_Grid[neighborIndex];
 
-                        // Cross-check all particles
-                        for (int a : particles)
+                        // Cross-check all particles between current cell and neighbor cell
+                        for (int particleA : cellParticles)
                         {
-                            for (int b : neighborParticles)
+                            for (int particleB : neighborParticles)
                             {
-                                pairs.emplace_back(a, b);
+                                if (AreParticlesCloseEnough(particleA, particleB, particles, maxDistance))
+                                {
+                                    m_CollisionPairs.emplace_back(particleA, particleB);
+                                }
                             }
                         }
                     }
@@ -109,6 +137,6 @@ public:
             }
         }
 
-        return pairs;
+        return m_CollisionPairs;
     }
 };

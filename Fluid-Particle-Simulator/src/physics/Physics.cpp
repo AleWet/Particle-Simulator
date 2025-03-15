@@ -70,7 +70,9 @@ void UpdatePhysics(SimulationSystem& sim, float deltaTime, bool useSpacePart)
         }
 
         // Get collision pairs and resolve collisions
-        std::vector<std::pair<int, int>> collisionPairs = grid.GetPotentialCollisionPairs();
+        std::vector<std::pair<int, int>> collisionPairs = grid.GetPotentialCollisionPairs(
+                                                                sim.GetParticles(),
+                                                                2 * sim.GetParticleRadius());
 
         // Solve collision pairs
         for (const auto& pair : collisionPairs) 
