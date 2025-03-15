@@ -70,27 +70,20 @@ int main(void)
         float aspectRatio = (float)WINDOW_WIDTH / (float)WINDOW_HEIGHT;
 
         // Arbitrary world units for simulation width
-        float simWidth = 2000.0f;  
+        float simWidth = 2000.0f;
 
-        // Particle size (in simulation units) ==> this size is relative to the simulation units
+        // Particle size (in simulation units)
         float particleRadius = 20.0f;
         
         // Make simulation rectangle the same ratio of the screen for simplicity
         float simHeight = simWidth / aspectRatio; 
-
-        // Define simulation boundaries centered on the origin
-        glm::vec2 bottomLeft(-simWidth / 2, -simHeight / 2);
-        glm::vec2 topRight(simWidth/ 2, simHeight / 2);
-
-        // Distance from simulation border and window
-        float simulationBorderOffset = 1.0f;
 
         // Set zoom
         float zoom = 0.7f;
 
         // Add particles in a grid pattern (800 particles is current limit)
         int rows = 20;
-        int cols = 10;
+        int cols = 20;
 
         // // PARTICLE CREATION
                   
@@ -110,7 +103,10 @@ int main(void)
 
 
         // --------------------------------------------------------------------------------
-
+        
+        // Define simulation boundaries centered on the origin
+        glm::vec2 bottomLeft(-simWidth / 2, -simHeight / 2);
+        glm::vec2 topRight(simWidth / 2, simHeight / 2);
 
         // Create simulation system
         SimulationSystem sim(bottomLeft, topRight, particleRadius, WINDOW_WIDTH);
@@ -155,7 +151,7 @@ int main(void)
             sim.SetZoom(zoom);
 
             // Setup border mvp, this in the future will be inside 
-            // particle renderer of sim system
+            // particle renderer of sim system (maybe)
             glm::mat4 borderMVP = sim.GetProjMatrix() * sim.GetViewMatrix();
 
             // Update physics before rendering
@@ -174,7 +170,7 @@ int main(void)
             BoundsRenderer(sim.GetBounds()[0], sim.GetBounds()[1], borderWidth, simBorderColor, borderMVP);
 
             // Display FPS
-            if (++counter > 50)
+            if (++counter > 75)
             {
                 std::string title = "Particle Simulation - FPS: " +
                     std::to_string(timeManager.getLastfps()) + " / MSPF " +

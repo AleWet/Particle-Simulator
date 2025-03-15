@@ -75,7 +75,7 @@ void ParticleRenderer::InitBuffers()
     m_IndexBuffer->Bind();
 
     // Create an empty instance buffer initially (will be updated in UpdateBuffers)
-    const size_t initialBufferSize = sizeof(ParticleInstance) * 1000; // Allocate for 1000 particles initially
+    const size_t initialBufferSize = sizeof(ParticleInstance) * 5000; // Allocate for 1000 particles initially
     m_InstanceBuffer = new VertexBuffer(nullptr, initialBufferSize, GL_STREAM_DRAW);
 
     // Set up instance buffer layout
@@ -113,7 +113,8 @@ void ParticleRenderer::UpdateInstanceDataColorVelocity(std::vector<ParticleInsta
                                                     const std::vector<Particle>& particles)
 {
     size_t particleCount = instanceData.size();
-    for (size_t i = 0; i < particleCount; i++) {
+    for (size_t i = 0; i < particleCount; i++) 
+    {
         const Particle& particle = particles[i];
 
         // Set position directly from particle
@@ -127,22 +128,26 @@ void ParticleRenderer::UpdateInstanceDataColorVelocity(std::vector<ParticleInsta
         // Continuous RGB gradient from blue -> cyan -> green -> yellow -> red
         glm::vec3 color;
 
-        if (normalizedV < 0.25f) {
+        if (normalizedV < 0.25f) 
+        {
             // Blue to Cyan (0,0,1) -> (0,1,1)
             float t = normalizedV / 0.25f;
             color = glm::vec3(0.0f, t, 1.0f);
         }
-        else if (normalizedV < 0.5f) {
+        else if (normalizedV < 0.5f) 
+        {
             // Cyan to Green (0,1,1) -> (0,1,0)
             float t = (normalizedV - 0.25f) / 0.25f;
             color = glm::vec3(0.0f, 1.0f, 1.0f - t);
         }
-        else if (normalizedV < 0.75f) {
+        else if (normalizedV < 0.75f) 
+        {
             // Green to Yellow (0,1,0) -> (1,1,0)
             float t = (normalizedV - 0.5f) / 0.25f;
             color = glm::vec3(t, 1.0f, 0.0f);
         }
-        else {
+        else 
+        {
             // Yellow to Red (1,1,0) -> (1,0,0)
             float t = (normalizedV - 0.75f) / 0.25f;
             color = glm::vec3(1.0f, 1.0f - t, 0.0f);
@@ -152,6 +157,22 @@ void ParticleRenderer::UpdateInstanceDataColorVelocity(std::vector<ParticleInsta
 
         // The random +2 is to avoid the annoying particle hovering over eachother bug
         // This is just for visuals. With particles radius > 10.0f add 1.0f to this value
+        instanceData[i].size = m_Simulation.GetParticleRadius();
+    }
+}
+
+void ParticleRenderer::UpdateInstanceDataPlaneColor(std::vector<ParticleInstance>& instanceData,
+                                                    const std::vector<Particle>& particles)
+{
+    size_t particleCount = instanceData.size();
+    float increment = 3.0f / particleCount;
+    glm::vec4 finalColor = glm::vec4(0.0, 1.0, 1.0, 1.0);
+
+    for (size_t i = 0; i < particleCount; i++) 
+    {
+        const Particle& particle = particles[i];
+        instanceData[i].color = finalColor;
+        instanceData[i].position = particle.position;
         instanceData[i].size = m_Simulation.GetParticleRadius();
     }
 }
@@ -172,7 +193,10 @@ void ParticleRenderer::UpdateBuffers()
     }
     
     // Update instance data
-    UpdateInstanceDataColorVelocity(m_InstanceData, particles);
+    //UpdateInstanceDataColorVelocity(m_InstanceData, particles);
+
+    // DEBUG
+    UpdateInstanceDataPlaneColor(m_InstanceData, particles);
     
     // Update buffer
     m_InstanceBuffer->Bind();
@@ -181,7 +205,7 @@ void ParticleRenderer::UpdateBuffers()
     // Only reallocate if buffer is too small
     if (dataSize > m_InstanceBuffer->GetSize()) {
         // Allocate with some growth factor to avoid frequent resizing
-        size_t newSize = dataSize * 1.5;
+        size_t newSize = dataSize * 2;
         glBufferData(GL_ARRAY_BUFFER, newSize, nullptr, GL_STREAM_DRAW);
         m_InstanceBuffer->Resize(newSize);
     }

@@ -39,8 +39,9 @@ void UpdatePhysics(SimulationSystem& sim, float deltaTime, bool useSpacePart)
 
         // Solve collision between particle and border
         SolveCollisionBorder(particleA, sim.GetBounds(), sim.GetParticleRadius());
-
-        if (!useSpacePart)
+        
+        // Choose if using or not space partitioning 
+        if (!useSpacePart) 
         {
             for (int j = 0; j < N; j++)
             {
@@ -55,7 +56,7 @@ void UpdatePhysics(SimulationSystem& sim, float deltaTime, bool useSpacePart)
     if (useSpacePart)
     {
         // Create spatial grid with cell size of 2x particle radius
-        float cellSize = 3.1f * 2.0f * sim.GetParticleRadius();
+        float cellSize = 2.1f * 2.0f * sim.GetParticleRadius();
         auto simBoundsd = sim.GetBounds();
         SpatialGrid grid(simBoundsd[0], simBoundsd[1], cellSize);
 
