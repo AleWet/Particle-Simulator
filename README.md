@@ -1,4 +1,4 @@
-# Particle Simulator (Outdated)
+# Particle Simulator 
 
 ## Overview
 This project is a physics-based particle simulator written in C++ using OpenGL. It was designed for physics testing and employs Euler's integration along with a naive space partitioning algorithm for simulation. The project is currently outdated, but contributions are welcome.
@@ -9,7 +9,10 @@ This project is a physics-based particle simulator written in C++ using OpenGL. 
 - **Customizable Simulation Parameters** (set before compilation)
 - **GLFW & GLEW for OpenGL rendering**
 - **GLM for mathematical computations**
-- **Supports up to ~750 particles** 
+
+## Future Objectives
+- real time simulation of up to **100.000 particles**
+- implement vertlet integration
 
 ## Dependencies
 The project requires the following libraries, all included in the `Dependencies` folder:
@@ -61,7 +64,7 @@ The parameters cannot be modified at runtime. Modify them in the source code and
 
 ## Known Issues & Limitations
 - **Particle Overlap:** Particles do not exactly touch each other (offset by a few pixels).
-- **Performance Limit:** The simulation struggles with more than **750 particles** due to performance constraints.
+- **Performance Limit:** The simulation struggles with more than **2800 particles** (as of the 15/03/2025) due to performance constraints. 
 
 ## Contribution
 This project is open for contributions. Feel free to submit pull requests to improve performance, fix issues, or add features.
