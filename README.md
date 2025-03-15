@@ -11,7 +11,7 @@ This project is a physics-based particle simulator written in C++ using OpenGL. 
 - **GLM for mathematical computations**
 
 ## Future Objectives
-- real time simulation of **100.000 particles**
+- real time simulation of up to **100.000 particles**
 - implement vertlet integration
 
 ## Dependencies
