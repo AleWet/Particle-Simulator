@@ -55,25 +55,23 @@ void UpdatePhysics(SimulationSystem& sim, float deltaTime, bool useSpacePart)
     }
     if (useSpacePart)
     {
-        // Create spatial grid with cell size of 2x particle radius
-        float cellSize = 2.1f * 2.0f * sim.GetParticleRadius();
-        auto simBoundsd = sim.GetBounds();
-        SpatialGrid grid(simBoundsd[0], simBoundsd[1], cellSize);
+        static SpatialGrid grid(
+            sim.GetBounds().bottomLeft,
+            sim.GetBounds().topRight,
+            2.1f * 2.0f * sim.GetParticleRadius() // Cell size (compute once)
+        );
 
-        // Insert all particles into the grid
-        for (int i = 0; i < N; i++)
+        grid.Clear();
+
+        // Insert all particles into the reused grid
+        for (int i = 0; i < N; i++) {
             grid.InsertParticle(i, particles[i].position);
+        }
 
-
-        // Get potential collision pairs
+        // Get collision pairs and resolve collisions
         std::vector<std::pair<int, int>> collisionPairs = grid.GetPotentialCollisionPairs();
-
-        // Solve collisions for potential pairs
         for (const auto& pair : collisionPairs) {
-            int i = pair.first;
-            int j = pair.second;
-
-            SolveCollisionParticle(particles[i], particles[j], sim.GetBounds(), sim.GetParticleRadius());
+            SolveCollisionParticle(particles[pair.first], particles[pair.second], sim.GetBounds(), sim.GetParticleRadius());
         }
     }
 }

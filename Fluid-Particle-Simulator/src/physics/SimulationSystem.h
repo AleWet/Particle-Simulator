@@ -6,13 +6,17 @@
 #include "glm/gtc/matrix_transform.hpp"
 #include "SpatialGrid.h"
 
+struct Bounds {
+    glm::vec2 bottomLeft;
+    glm::vec2 topRight;
+};
+
 // Object to control the simulation
 class SimulationSystem
 {
 private:
     std::vector<Particle> m_Particles;     
-    glm::vec2 m_bottomLeft;  
-    glm::vec2 m_topRight;    
+    Bounds m_Bounds;
     float m_ParticleRadius;
     float m_Zoom;
     float m_SimHeight;
@@ -44,13 +48,7 @@ public:
     const std::vector<Particle>& GetParticles() const { return m_Particles; } // THIS ONE IS JUST OT COPY 
     std::vector<Particle>& GetParticles() { return m_Particles; } // THIS ONE IS TO MODIFY THE VECTORIT
 
-    const std::vector<glm::vec2> GetBounds() const
-    {
-        std::vector<glm::vec2> bounds(2);
-        bounds[0] = m_bottomLeft;
-        bounds[1] = m_topRight;
-        return bounds;
-    }
+    const Bounds& GetBounds() const { return m_Bounds; }
     
     // Return projection matrix for rendering the simulation
     glm::mat4 GetProjMatrix() const;

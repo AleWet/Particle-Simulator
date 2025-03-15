@@ -74,8 +74,8 @@ void ParticleRenderer::InitBuffers()
     m_VertexArray->Bind();
     m_IndexBuffer->Bind();
 
-    // Create an empty instance buffer initially (will be updated in UpdateBuffers)
-    const size_t initialBufferSize = sizeof(ParticleInstance) * 5000; // Allocate for 1000 particles initially
+    // Allocate based on current particle count
+    const size_t initialBufferSize = sizeof(ParticleInstance) * m_Simulation.GetParticles().size();
     m_InstanceBuffer = new VertexBuffer(nullptr, initialBufferSize, GL_STREAM_DRAW);
 
     // Set up instance buffer layout

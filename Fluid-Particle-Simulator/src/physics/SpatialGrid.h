@@ -11,6 +11,7 @@ private:
     int m_GridWidth;        // Number of cells along X-axis
     int m_GridHeight;       // Number of cells along Y-axis
     std::vector<std::vector<int>> m_Grid;  // 1D grid (flattened 2D)
+    size_t m_CollisionPairCapacity = 10000;
 
     // Converts a world position to grid indices
     glm::ivec2 GetCellIndices(const glm::vec2& position) const {
@@ -46,7 +47,8 @@ public:
     // Clear all cells
     void Clear() {
         for (auto& cell : m_Grid) {
-            cell.clear();
+            // Empty cells but retain memory
+            cell.clear(); 
         }
     }
 
@@ -59,39 +61,45 @@ public:
     // Get potential collision pairs
     std::vector<std::pair<int, int>> GetPotentialCollisionPairs() {
         std::vector<std::pair<int, int>> pairs;
-        pairs.reserve(10000);  // Preallocate to reduce rehashing
+        pairs.reserve(m_CollisionPairCapacity); // Start with preallocated capacity
 
-        // Check all cells
-        for (int y = 0; y < m_GridHeight; y++) {
-            for (int x = 0; x < m_GridWidth; x++) {
+        // Lambda to handle pair insertion with dynamic growth
+        auto addPair = [&](int a, int b) {
+            if (pairs.size() >= pairs.capacity()) {
+                // Grow capacity by 1.5x to minimize reallocations
+                m_CollisionPairCapacity = static_cast<size_t>(m_CollisionPairCapacity * 1.5);
+                pairs.reserve(m_CollisionPairCapacity);
+            }
+            pairs.emplace_back(a, b);
+            };
+
+        // Iterate through all grid cells
+        for (int y = 0; y < m_GridHeight; ++y) {
+            for (int x = 0; x < m_GridWidth; ++x) {
                 const glm::ivec2 currentCell(x, y);
                 const int cellIndex = To1DIndex(currentCell);
                 const auto& particles = m_Grid[cellIndex];
 
-                // Check particles within the same cell
-                for (size_t i = 0; i < particles.size(); i++) {
-                    for (size_t j = i + 1; j < particles.size(); j++) {
-                        pairs.emplace_back(particles[i], particles[j]);
+                // Check pairs within the same cell
+                for (size_t i = 0; i < particles.size(); ++i) {
+                    for (size_t j = i + 1; j < particles.size(); ++j) {
+                        addPair(particles[i], particles[j]);
                     }
                 }
 
                 // Check neighboring cells (right, top-right, top, top-left)
-                const glm::ivec2 neighbors[] = {
-                    {1, 0}, {1, 1}, {0, 1}, {-1, 1}
-                };
-
+                const glm::ivec2 neighbors[] = { {1, 0}, {1, 1}, {0, 1}, {-1, 1} };
                 for (const auto& offset : neighbors) {
-                    glm::ivec2 neighborCell = currentCell + offset;
+                    const glm::ivec2 neighborCell = currentCell + offset;
                     if (neighborCell.x >= 0 && neighborCell.x < m_GridWidth &&
-                        neighborCell.y >= 0 && neighborCell.y < m_GridHeight)
-                    {
+                        neighborCell.y >= 0 && neighborCell.y < m_GridHeight) {
                         const int neighborIndex = To1DIndex(neighborCell);
                         const auto& neighborParticles = m_Grid[neighborIndex];
 
-                        // Cross-check particles between current and neighbor cells
+                        // Check pairs between current and neighbor cells
                         for (int a : particles) {
                             for (int b : neighborParticles) {
-                                pairs.emplace_back(a, b);
+                                addPair(a, b);
                             }
                         }
                     }

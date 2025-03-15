@@ -4,12 +4,12 @@
 const float BOUNCINESS = 1.0f;
 
 void SolveCollisionBorder(Particle& particleA,
-    const std::vector<glm::vec2> simBounds,
+    const Bounds bounds,
     float particleRadius)
 {
     // Extract boundary coordinates
-    const glm::vec2& bottomLeft = simBounds[0];
-    const glm::vec2& topRight = simBounds[1];
+    const glm::vec2& bottomLeft = bounds.bottomLeft;
+    const glm::vec2& topRight = bounds.topRight;
 
     // Calculate particle radius in simulation units
     float radius = static_cast<float>(particleRadius);
@@ -50,7 +50,7 @@ void SolveCollisionBorder(Particle& particleA,
 }
 
 void SolveCollisionParticle(Particle& particleA, Particle& particleB,
-    const std::vector<glm::vec2> simBounds,
+    const Bounds bounds,
     float particleRadius)
 {
     // Calculate vector between particle centers

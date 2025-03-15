@@ -3,7 +3,7 @@
 #include <algorithm>
 
 SimulationSystem::SimulationSystem(const glm::vec2& bottomLeft, const glm::vec2& topRight, float particleRadius, unsigned int windowWidth)
-    : m_bottomLeft(bottomLeft), m_topRight(topRight), m_ParticleRadius(particleRadius),
+    : m_Bounds({ bottomLeft, topRight }), m_ParticleRadius(particleRadius),
     m_Zoom(1.0f), m_WindowWidth(windowWidth)
 {
     m_SimHeight = std::abs(topRight.y - bottomLeft.y);
@@ -23,9 +23,12 @@ void SimulationSystem::AddParticle(const glm::vec2& position, const glm::vec2& v
 
 void SimulationSystem::AddParticleGrid(int rows, int cols, glm::vec2 spacing, bool withInitialVelocity, float mass)
 {
+    // Reserve memory at the start
+    m_Particles.reserve(m_Particles.size() + rows * cols);
+
     // Calculate the starting position (top-left corner of the simulation area)
-    float startX = m_bottomLeft.x + m_ParticleRadius;
-    float startY = m_topRight.y - m_ParticleRadius;
+    float startX = m_Bounds.bottomLeft.x + m_ParticleRadius;
+    float startY = m_Bounds.topRight.y - m_ParticleRadius;
 
     // Calculate step between particles (center-to-center distance)
     float stepX = 2.0f * m_ParticleRadius + spacing.x;
@@ -53,8 +56,8 @@ void SimulationSystem::AddParticleGrid(int rows, int cols, glm::vec2 spacing, bo
 glm::mat4 SimulationSystem::GetProjMatrix() const
 {
     // Calculate the simulation boundaries
-    const float simWidth = m_topRight.x - m_bottomLeft.x;
-    const float simHeight = m_topRight.y - m_bottomLeft.y;
+    const float simWidth = m_Bounds.topRight.x - m_Bounds.bottomLeft.x;
+    const float simHeight = m_Bounds.topRight.y - m_Bounds.bottomLeft.y;
 
     // Calculate the aspect ratio of the simulation space itself
     const float simulationAspectRatio = simWidth / simHeight;
@@ -73,8 +76,8 @@ glm::mat4 SimulationSystem::GetProjMatrix() const
 
 glm::mat4 SimulationSystem::GetViewMatrix() const
 {
-    // Calculate simulation center point
-    const glm::vec2 simulationCenter = (m_topRight + m_bottomLeft) * 0.5f;
+    // Calculate simulation center 
+    const glm::vec2 simulationCenter = (m_Bounds.topRight + m_Bounds.bottomLeft) * 0.5f;
 
     // Create view transformation matrix
     glm::mat4 view = glm::mat4(1.0f);
@@ -96,13 +99,9 @@ void SimulationSystem::InitSpatialGrid()
     if (m_SpatialGrid) {
         delete m_SpatialGrid;
     }
-    // 
-    // 
+
     // size should be slightly larger than twice the particle diameter
     float cellSize = 3.1f * 2.0f * m_ParticleRadius;
-    auto simBoundsd = GetBounds();
-    m_SpatialGrid = new SpatialGrid(simBoundsd[0], simBoundsd[1], cellSize);
-
-    
-    
+    const auto& bounds = GetBounds();
+    m_SpatialGrid = new SpatialGrid(bounds.bottomLeft, bounds.topRight, cellSize);
 }

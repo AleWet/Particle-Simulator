@@ -1,4 +1,4 @@
-#include <GL/glew.h>
+﻿#include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
 #include "physics/SimulationSystem.h"
@@ -11,6 +11,47 @@
 #include "Utils.h"
 
 // other includes are in Utils.h
+
+
+// Updates the window title with formatted performance metrics
+void UpdateWindowTitle(GLFWwindow* window, const Time& timeManager, const std::string& appName = "Particle Simulation")
+{
+    // Format FPS with consistent width (6 chars: ####.#)
+    char fpsBuffer[32];
+    snprintf(fpsBuffer, sizeof(fpsBuffer), "%6.1f", timeManager.getLastfps());
+
+    char avgFpsBuffer[32];
+    snprintf(avgFpsBuffer, sizeof(avgFpsBuffer), "%6.1f", timeManager.getAverageFPS());
+
+    // Format MSPF with consistent width (6 chars: ###.##)
+    char mspfBuffer[32];
+    snprintf(mspfBuffer, sizeof(mspfBuffer), "%6.2f", timeManager.getLastFrameTimeMs());
+
+    char avgMspfBuffer[32];
+    snprintf(avgMspfBuffer, sizeof(avgMspfBuffer), "%6.2f", timeManager.getAverageFrameTimeMs());
+
+    // Combine into a nicely formatted title with fixed width fields
+    std::string title = appName + " | " +
+        "FPS: " + fpsBuffer + " (Avg: " + avgFpsBuffer + ") | " +
+        "MS: " + mspfBuffer + " (Avg: " + avgMspfBuffer + ")";
+
+    // Use fixed-width status indicators
+    float targetFPS = 60.0f;
+    float avgFPS = timeManager.getAverageFPS();
+
+    if (avgFPS >= targetFPS * 0.95f) {
+        title += " [Good]    "; // Fixed width padding
+    }
+    else if (avgFPS >= targetFPS * 0.8f) {
+        title += " [Average] "; // Same width as other indicators
+    }
+    else {
+        title += " [Poor]    "; // Same width as other indicators
+    }
+
+    // Update the window title
+    glfwSetWindowTitle(window, title.c_str());
+}
 
 
 int main(void)
@@ -73,7 +114,7 @@ int main(void)
         float simWidth = 2000.0f;
 
         // Particle size (in simulation units)
-        float particleRadius = 20.0f;
+        float particleRadius = 10.0f;
         
         // Make simulation rectangle the same ratio of the screen for simplicity
         float simHeight = simWidth / aspectRatio; 
@@ -81,9 +122,9 @@ int main(void)
         // Set zoom
         float zoom = 0.7f;
 
-        // Add particles in a grid pattern (800 particles is current limit)
-        int rows = 20;
-        int cols = 20;
+        // Add particles in a grid pattern (2800 particles is current limit)
+        int rows = 50;
+        int cols = 55;
 
         // // PARTICLE CREATION
                   
@@ -167,15 +208,14 @@ int main(void)
 
             // Render simulation borders
             // This implementation isn't the best but good enough
-            BoundsRenderer(sim.GetBounds()[0], sim.GetBounds()[1], borderWidth, simBorderColor, borderMVP);
+            const auto& bounds = sim.GetBounds();
 
-            // Display FPS
+            BoundsRenderer(bounds.bottomLeft, bounds.topRight, borderWidth, simBorderColor, borderMVP);
+
+            // Display fps and mspf
             if (++counter > 75)
             {
-                std::string title = "Particle Simulation - FPS: " +
-                    std::to_string(timeManager.getLastfps()) + " / MSPF " +
-                    std::to_string(timeManager.getLastFrameTimeMs());
-                glfwSetWindowTitle(window, title.c_str());
+                UpdateWindowTitle(window, timeManager);
                 counter = 0;
             }
 
