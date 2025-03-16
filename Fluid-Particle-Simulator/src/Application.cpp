@@ -102,48 +102,57 @@ int main(void)
 
     { // Additional scope to avoid memory leaks
 
-        // SIMULATION PARAMETERS ----------------------------------------------------------
+        // ================== SIMULATION PARAMETERS ==================
          
-        // // GENERAL 
+        // --------- GENERAL --------- 
             
         // Set up simulation boundaries based on screen coordinates
         // I'll use normalized device coordinates for simplicity, then scale with view matrix
-        float aspectRatio = (float)WINDOW_WIDTH / (float)WINDOW_HEIGHT;
+        const float aspectRatio = (float)WINDOW_WIDTH / (float)WINDOW_HEIGHT;
 
         // Arbitrary world units for simulation width
-        float simWidth = 2000.0f;
+        const float simWidth = 2000.0f;
 
         // Particle size (in simulation units)
-        float particleRadius = 10.0f;
+        const float particleRadius = 10.0f;
         
         // Make simulation rectangle the same ratio of the screen for simplicity
-        float simHeight = simWidth / aspectRatio; 
+        const float simHeight = simWidth / aspectRatio; 
 
         // Set zoom
-        float zoom = 0.7f;
+        const float zoom = 0.7f;
 
-        // Add particles in a grid pattern (7000 particles is current limit)
+        // Number of substeps for simulation
+        const unsigned int subSteps = 8;
+
+        // --------- PARTICLE CREATION --------- 
+              
+        // --- GRID ---
+                
         int rows = 82;
         int cols = 85;
+        const glm::vec2 spacing = glm::vec2(0.0f, 0.0f);
+        const float particleMassGrid = 1.0f;
+        const bool withInitialVelocityGrid = true;
 
-        // // PARTICLE CREATION
-                  
-        glm::vec2 spacing = glm::vec2(0.0f, 0.0f);
-        float particleMass = 1.0f;
-        bool withInitialVelocity = true;
+        // --- STREAM ---
 
-        // // BORDER 
+        const unsigned int totalParticles = 1000;
+        const float StreamSpeed = 50.0f; // Particle spawn rate
+        const float particleMassStream = 1.0f;
+        const glm::vec2 initialVelocityStream = glm::vec2(100.0, 0.0);
+        
+        // ---------  BORDER --------- 
 
         // Set border rendering parameters
         glm::vec4 simBorderColor(1.0f, 1.0f, 1.0f, 0.5f); // White
         glm::vec4 gridBorderColor(0.0f, 1.0f, 0.0f, 0.5f); // Green
         float borderWidth = 2.0f;
 
-        // // OPTIMISATIONS
+        // ---------  OPTIMISATIONS --------- 
         bool useSpacePartitioning = true;
 
-
-        // --------------------------------------------------------------------------------
+        // =======================================
         
         // Define simulation boundaries centered on the origin
         glm::vec2 bottomLeft(-simWidth / 2, -simHeight / 2);
@@ -153,8 +162,11 @@ int main(void)
         SimulationSystem sim(bottomLeft, topRight, particleRadius, WINDOW_WIDTH);
 
         //sim.AddParticleGrid(rows, cols, gridBottomLeft, gridTopRight, spacing, particleMass);
-        sim.AddParticleGrid(rows, cols, spacing, withInitialVelocity, particleMass);
+        //sim.AddParticleGrid(rows, cols, spacing, withInitialVelocity, particleMass);
        
+        // Add particle stream     
+        sim.StartParticleStream(totalParticles, StreamSpeed, initialVelocityStream, particleMassStream);
+
         // Enable blending
         GLCall(glEnable(GL_BLEND));
         
@@ -198,7 +210,12 @@ int main(void)
             // Update physics before rendering
             int steps = timeManager.update();
             for (int i = 0; i < steps; i++)
-                UpdatePhysics(sim, timeManager.getFixedDeltaTime(), useSpacePartitioning);
+            {
+                for (int j = 0; j < subSteps; j++)
+                {
+                    UpdatePhysics(sim, timeManager.getFixedDeltaTime() / subSteps, useSpacePartitioning);
+                }
+            }
 
             // Update buffers with new particle data
             renderer.UpdateBuffers();

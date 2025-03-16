@@ -1,7 +1,7 @@
 #include "physics.h"
 #include "SpatialGrid.h"
 
-const glm::vec2 G = glm::vec2(0.0f, -9.80665f);
+const glm::vec2 G = glm::vec2(0.0f, -20.80665f);
 
 void UpdatePhysics(SimulationSystem& sim, float deltaTime, bool useSpacePart)
 {
@@ -79,4 +79,5 @@ void UpdatePhysics(SimulationSystem& sim, float deltaTime, bool useSpacePart)
             SolveCollisionParticle(particles[pair.first], particles[pair.second], sim.GetBounds(), sim.GetParticleRadius());
         
     }
+    sim.UpdateStream(deltaTime);
 }

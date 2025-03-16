@@ -24,6 +24,15 @@ private:
     unsigned int m_WindowWidth;
     bool m_UseSpatialGrid = true;
     SpatialGrid* m_SpatialGrid = nullptr;
+    struct ParticleStream {
+        bool isActive = false;
+        glm::vec2 startPos;
+        glm::vec2 velocity;
+        float spawnInterval;
+        float timer;
+        int total;
+        int spawned;
+    } m_Stream;
 
 public:
     // bottomLeft is the bottom-left corner of the simulation rectangle and
@@ -44,6 +53,9 @@ public:
     // of this the particles are separated by their radius regardless of the prev. input.
     // This is to avoid a bug that doesn't separate the particles
     void AddParticleGrid(int rows, int cols, glm::vec2 spacing, bool withInitialVelocity, float mass = 1.0f);
+
+    void StartParticleStream(const int totalParticles, const float spawnRate, const glm::vec2& velocity, const float mass = 1.0f);
+    void UpdateStream(float deltaTime, const float mass = 1.0f);
 
     const std::vector<Particle>& GetParticles() const { return m_Particles; } // THIS ONE IS JUST OT COPY 
     std::vector<Particle>& GetParticles() { return m_Particles; } // THIS ONE IS TO MODIFY THE VECTORIT

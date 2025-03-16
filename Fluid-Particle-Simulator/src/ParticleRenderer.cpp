@@ -96,10 +96,10 @@ void ParticleRenderer::InitBuffers()
 
     GLCall(glEnableVertexAttribArray(3));
     GLCall(glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(ParticleInstance), (void*)(2 * sizeof(float))));
-    GLCall(glVertexAttribDivisor(3, 1)); // Color (advance one instance at a time)
+    GLCall(glVertexAttribDivisor(3, 1)); // Velocity (advance one instance at a time)
 
     GLCall(glEnableVertexAttribArray(4));
-    GLCall(glVertexAttribPointer(4, 1, GL_FLOAT, GL_FALSE, sizeof(ParticleInstance), (void*)(6 * sizeof(float))));
+    GLCall(glVertexAttribPointer(4, 1, GL_FLOAT, GL_FALSE, sizeof(ParticleInstance), (void*)(4 * sizeof(float))));
     GLCall(glVertexAttribDivisor(4, 1)); // Size (advance one instance at a time)
 
     // Unbind everything
@@ -109,99 +109,34 @@ void ParticleRenderer::InitBuffers()
     m_IndexBuffer->UnBind();
 }
 
-void ParticleRenderer::UpdateInstanceDataColorVelocity(std::vector<ParticleInstance>& instanceData, 
-                                                    const std::vector<Particle>& particles)
-{
-    size_t particleCount = instanceData.size();
-    for (size_t i = 0; i < particleCount; i++) 
-    {
-        const Particle& particle = particles[i];
-
-        // Set position directly from particle
-        instanceData[i].position = particle.position;
-
-        // Color based on velocity (blue -> green -> red)
-        // Assume 200.0 units / second is max
-        float normalizedV = (std::min(glm::length(particle.velocity), 200.0f)) / 200.0f;
-        normalizedV = glm::clamp(normalizedV, 0.0f, 1.0f);
-
-        // Continuous RGB gradient from blue -> cyan -> green -> yellow -> red
-        glm::vec3 color;
-
-        if (normalizedV < 0.25f) 
-        {
-            // Blue to Cyan (0,0,1) -> (0,1,1)
-            float t = normalizedV / 0.25f;
-            color = glm::vec3(0.0f, t, 1.0f);
-        }
-        else if (normalizedV < 0.5f) 
-        {
-            // Cyan to Green (0,1,1) -> (0,1,0)
-            float t = (normalizedV - 0.25f) / 0.25f;
-            color = glm::vec3(0.0f, 1.0f, 1.0f - t);
-        }
-        else if (normalizedV < 0.75f) 
-        {
-            // Green to Yellow (0,1,0) -> (1,1,0)
-            float t = (normalizedV - 0.5f) / 0.25f;
-            color = glm::vec3(t, 1.0f, 0.0f);
-        }
-        else 
-        {
-            // Yellow to Red (1,1,0) -> (1,0,0)
-            float t = (normalizedV - 0.75f) / 0.25f;
-            color = glm::vec3(1.0f, 1.0f - t, 0.0f);
-        }
-
-        instanceData[i].color = glm::vec4(color, 1.0f);
-
-        // The random +2 is to avoid the annoying particle hovering over eachother bug
-        // This is just for visuals. With particles radius > 10.0f add 1.0f to this value
-        instanceData[i].size = m_Simulation.GetParticleRadius();
-    }
-}
-
-void ParticleRenderer::UpdateInstanceDataPlaneColor(std::vector<ParticleInstance>& instanceData,
-                                                    const std::vector<Particle>& particles)
-{
-    size_t particleCount = instanceData.size();
-    float increment = 3.0f / particleCount;
-    glm::vec4 finalColor = glm::vec4(0.0, 1.0, 1.0, 1.0);
-
-    for (size_t i = 0; i < particleCount; i++) 
-    {
-        const Particle& particle = particles[i];
-        instanceData[i].color = finalColor;
-        instanceData[i].position = particle.position;
-        instanceData[i].size = m_Simulation.GetParticleRadius();
-    }
-}
 
 void ParticleRenderer::UpdateBuffers()
 {
     // Get particles from simulation
     const std::vector<Particle>& particles = m_Simulation.GetParticles();
     const size_t particleCount = particles.size();
-    
+
     if (particleCount == 0) {
         return;
     }
-    
+
     // Resize only if needed, preserving capacity
     if (m_InstanceData.size() < particleCount) {
         m_InstanceData.resize(particleCount);
     }
-    
-    // Update instance data
-    UpdateInstanceDataColorVelocity(m_InstanceData, particles);
 
-    // DEBUG
-    //UpdateInstanceDataPlaneColor(m_InstanceData, particles);
-    
+    // Update instance data with particle positions and velocities
+    for (size_t i = 0; i < particleCount; i++) {
+        const Particle& particle = particles[i];
+        m_InstanceData[i].position = particle.position;
+        m_InstanceData[i].velocity = particle.velocity;
+        m_InstanceData[i].size = m_Simulation.GetParticleRadius();
+    }
+
     // Update buffer
     m_InstanceBuffer->Bind();
     size_t dataSize = sizeof(ParticleInstance) * particleCount;
-    
+
     // Only reallocate if buffer is too small
     if (dataSize > m_InstanceBuffer->GetSize()) {
         // Allocate with some growth factor to avoid frequent resizing
@@ -209,7 +144,7 @@ void ParticleRenderer::UpdateBuffers()
         glBufferData(GL_ARRAY_BUFFER, newSize, nullptr, GL_STREAM_DRAW);
         m_InstanceBuffer->Resize(newSize);
     }
-    
+
     // Update the data
     glBufferSubData(GL_ARRAY_BUFFER, 0, dataSize, m_InstanceData.data());
     m_InstanceBuffer->UnBind();

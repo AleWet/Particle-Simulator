@@ -92,7 +92,32 @@ glm::mat4 SimulationSystem::GetViewMatrix() const
     return view;
 }
 
+void SimulationSystem::StartParticleStream(int totalParticles, float spawnRate, const glm::vec2& velocity, const float mass) 
+{
+    m_Stream.isActive = true;
+    m_Stream.startPos = glm::vec2(
+        m_Bounds.bottomLeft.x + m_ParticleRadius,  // X: Left boundary + particle radius
+        m_Bounds.topRight.y - m_ParticleRadius     // Y: Top boundary - particle radius
+    );
+    m_Stream.velocity = velocity;
+    m_Stream.total = totalParticles;
+    m_Stream.spawnInterval = 1.0f / spawnRate;
+    m_Stream.timer = 0.0f;
+    m_Stream.spawned = 0;
+}
 
+void SimulationSystem::UpdateStream(float deltaTime, const float mass)
+{
+    if (!m_Stream.isActive || m_Stream.spawned >= m_Stream.total) return;
+
+    m_Stream.timer += deltaTime;
+    while (m_Stream.timer >= m_Stream.spawnInterval && m_Stream.spawned < m_Stream.total) 
+    {
+        AddParticle(m_Stream.startPos, m_Stream.velocity, mass);
+        m_Stream.spawned++;
+        m_Stream.timer -= m_Stream.spawnInterval;
+    }
+}
 
 void SimulationSystem::InitSpatialGrid()
 {
