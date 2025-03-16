@@ -92,30 +92,38 @@ glm::mat4 SimulationSystem::GetViewMatrix() const
     return view;
 }
 
-void SimulationSystem::StartParticleStream(int totalParticles, float spawnRate, const glm::vec2& velocity, const float mass) 
+void SimulationSystem::AddParticleStream(int totalParticles, float spawnRate, const glm::vec2& velocity,
+    float mass, const glm::vec2& initialOffset)
 {
-    m_Stream.isActive = true;
-    m_Stream.startPos = glm::vec2(
-        m_Bounds.bottomLeft.x + m_ParticleRadius,  // X: Left boundary + particle radius
-        m_Bounds.topRight.y - m_ParticleRadius     // Y: Top boundary - particle radius
+    ParticleStream newStream;
+    newStream.isActive = true;
+    newStream.startPos = glm::vec2(
+        m_Bounds.bottomLeft.x + m_ParticleRadius + initialOffset.x,
+        m_Bounds.topRight.y - m_ParticleRadius - initialOffset.y
     );
-    m_Stream.velocity = velocity;
-    m_Stream.total = totalParticles;
-    m_Stream.spawnInterval = 1.0f / spawnRate;
-    m_Stream.timer = 0.0f;
-    m_Stream.spawned = 0;
+    newStream.velocity = velocity;
+    newStream.total = totalParticles;
+    newStream.spawnInterval = 1.0f / spawnRate;
+    newStream.timer = 0.0f;
+    newStream.spawned = 0;
+    newStream.mass = mass;
+
+    m_Streams.push_back(newStream);
 }
 
-void SimulationSystem::UpdateStream(float deltaTime, const float mass)
+void SimulationSystem::UpdateStreams(float deltaTime)
 {
-    if (!m_Stream.isActive || m_Stream.spawned >= m_Stream.total) return;
+    // Use iterator to allow removing completed streams if needed
+    for (auto& stream : m_Streams) {
+        if (!stream.isActive || stream.spawned >= stream.total) continue;
 
-    m_Stream.timer += deltaTime;
-    while (m_Stream.timer >= m_Stream.spawnInterval && m_Stream.spawned < m_Stream.total) 
-    {
-        AddParticle(m_Stream.startPos, m_Stream.velocity, mass);
-        m_Stream.spawned++;
-        m_Stream.timer -= m_Stream.spawnInterval;
+        stream.timer += deltaTime;
+
+        while (stream.timer >= stream.spawnInterval && stream.spawned < stream.total) {
+            AddParticle(stream.startPos, stream.velocity, stream.mass);
+            stream.spawned++;
+            stream.timer -= stream.spawnInterval;
+        }
     }
 }
 

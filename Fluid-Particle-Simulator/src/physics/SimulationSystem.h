@@ -24,15 +24,19 @@ private:
     unsigned int m_WindowWidth;
     bool m_UseSpatialGrid = true;
     SpatialGrid* m_SpatialGrid = nullptr;
+
     struct ParticleStream {
         bool isActive = false;
         glm::vec2 startPos;
         glm::vec2 velocity;
-        float spawnInterval;
-        float timer;
-        int total;
-        int spawned;
-    } m_Stream;
+        int total = 0;
+        int spawned = 0;
+        float spawnInterval = 0.0f;
+        float timer = 0.0f;
+        float mass = 1.0f;  
+    };
+
+    std::vector<ParticleStream> m_Streams;
 
 public:
     // bottomLeft is the bottom-left corner of the simulation rectangle and
@@ -54,8 +58,18 @@ public:
     // This is to avoid a bug that doesn't separate the particles
     void AddParticleGrid(int rows, int cols, glm::vec2 spacing, bool withInitialVelocity, float mass = 1.0f);
 
-    void StartParticleStream(const int totalParticles, const float spawnRate, const glm::vec2& velocity, const float mass = 1.0f);
-    void UpdateStream(float deltaTime, const float mass = 1.0f);
+    void AddParticleStream(int totalParticles, float spawnRate, const glm::vec2& velocity,
+        float mass, const glm::vec2& initialOffset);
+
+    // Replace StartParticleStream with AddParticleStream
+    // Update the UpdateStream method
+    void UpdateStreams(float deltaTime);
+
+    // Method to clear all streams
+    void ClearStreams() { m_Streams.clear(); }
+
+    // Method to get active stream count
+    size_t GetActiveStreamCount() const { return m_Streams.size(); }
 
     const std::vector<Particle>& GetParticles() const { return m_Particles; } // THIS ONE IS JUST OT COPY 
     std::vector<Particle>& GetParticles() { return m_Particles; } // THIS ONE IS TO MODIFY THE VECTORIT

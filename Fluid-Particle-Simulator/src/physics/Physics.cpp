@@ -1,43 +1,46 @@
 #include "physics.h"
 #include "SpatialGrid.h"
+#include "Vec2.h"  
 
-const glm::vec2 G = glm::vec2(0.0f, -20.80665f);
+const Vec2 G(0.0f, -20.80665f);
+const float AIR_RESISTANCE = 0.0f;
 
 void UpdatePhysics(SimulationSystem& sim, float deltaTime, bool useSpacePart)
 {
-    // Use reference to modify the actual particles
     std::vector<Particle>& particles = sim.GetParticles();
-    int N = particles.size();
+    const int N = particles.size();
 
-    // First update forces and positions for all particles
     for (int i = 0; i < N; i++)
     {
-        // Reference to the current particle to modify it directly
         Particle& particleA = particles[i];
 
-        // assume only grav. force
-        particleA.force = particleA.mass * G;
+        // Force calculation
+        particleA.force.x = particleA.mass * G.x;
+        particleA.force.y = particleA.mass * G.y;
 
-        // Apply simple damping (air resistance)
-        //particleA.force -= particleA.velocity * 0.1f;
+        // Air resistance
+        particleA.force.x -= particleA.velocity.x * AIR_RESISTANCE;
+        particleA.force.y -= particleA.velocity.y * AIR_RESISTANCE;
 
-        // Update velocity based on force
-        particleA.velocity += (particleA.force / particleA.mass) * deltaTime;
+        // Velocity integration
+        particleA.velocity.x += (particleA.force.x / particleA.mass) * deltaTime;
+        particleA.velocity.y += (particleA.force.y / particleA.mass) * deltaTime;
 
-        // Update position
-        particleA.position += particleA.velocity * deltaTime;
+        // Position integration
+        particleA.position.x += particleA.velocity.x * deltaTime;
+        particleA.position.y += particleA.velocity.y * deltaTime;
 
-        // Add a small amount of temperature for fast-moving particles kinda like friction 
-        float speed = glm::length(particleA.velocity);
-        if (speed > 5.0f) {
+        // Temperature calculation
+        const float speed = particleA.velocity.length();
+        if (speed > 5.0f) 
+        {
             particleA.temperature = std::min(100.0f, particleA.temperature + 0.1f);
         }
-        else {
-            // Cool down
+        else 
+        {
             particleA.temperature = std::max(20.0f, particleA.temperature - 0.05f);
         }
 
-        // Solve collision between particle and border
         SolveCollisionBorder(particleA, sim.GetBounds(), sim.GetParticleRadius());
         
         // Choose if using or not space partitioning 
@@ -79,5 +82,5 @@ void UpdatePhysics(SimulationSystem& sim, float deltaTime, bool useSpacePart)
             SolveCollisionParticle(particles[pair.first], particles[pair.second], sim.GetBounds(), sim.GetParticleRadius());
         
     }
-    sim.UpdateStream(deltaTime);
+    sim.UpdateStreams(deltaTime);
 }

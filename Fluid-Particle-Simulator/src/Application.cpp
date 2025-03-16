@@ -102,6 +102,7 @@ int main(void)
 
     { // Additional scope to avoid memory leaks
 
+
         // ================== SIMULATION PARAMETERS ==================
          
         // --------- GENERAL --------- 
@@ -112,9 +113,6 @@ int main(void)
 
         // Arbitrary world units for simulation width
         const float simWidth = 2000.0f;
-
-        // Particle size (in simulation units)
-        const float particleRadius = 10.0f;
         
         // Make simulation rectangle the same ratio of the screen for simplicity
         const float simHeight = simWidth / aspectRatio; 
@@ -122,8 +120,14 @@ int main(void)
         // Set zoom
         const float zoom = 0.7f;
 
+        // Toggle space partitioning
+        bool useSpacePartitioning = true;
+
         // Number of substeps for simulation
-        const unsigned int subSteps = 8;
+        const unsigned int subSteps = 1;
+
+        // Particle size (in simulation units)
+        const float particleRadius = 4.0f;
 
         // --------- PARTICLE CREATION --------- 
               
@@ -137,10 +141,10 @@ int main(void)
 
         // --- STREAM ---
 
-        const unsigned int totalParticles = 1000;
-        const float StreamSpeed = 50.0f; // Particle spawn rate
+        const unsigned int totalParticlesPerStream = 2900; // (limit with 1 substep is 9000 and without energy loss)
+        const float StreamSpeed = 150.0f;                  // Particle spawn rate
         const float particleMassStream = 1.0f;
-        const glm::vec2 initialVelocityStream = glm::vec2(100.0, 0.0);
+        const glm::vec2 initialVelocityStream = glm::vec2(100.0, -100.0);
         
         // ---------  BORDER --------- 
 
@@ -149,23 +153,31 @@ int main(void)
         glm::vec4 gridBorderColor(0.0f, 1.0f, 0.0f, 0.5f); // Green
         float borderWidth = 2.0f;
 
-        // ---------  OPTIMISATIONS --------- 
-        bool useSpacePartitioning = true;
+        // =========================================================
 
-        // =======================================
-        
+
+
         // Define simulation boundaries centered on the origin
         glm::vec2 bottomLeft(-simWidth / 2, -simHeight / 2);
         glm::vec2 topRight(simWidth / 2, simHeight / 2);
 
         // Create simulation system
         SimulationSystem sim(bottomLeft, topRight, particleRadius, WINDOW_WIDTH);
-
-        //sim.AddParticleGrid(rows, cols, gridBottomLeft, gridTopRight, spacing, particleMass);
-        //sim.AddParticleGrid(rows, cols, spacing, withInitialVelocity, particleMass);
        
-        // Add particle stream     
-        sim.StartParticleStream(totalParticles, StreamSpeed, initialVelocityStream, particleMassStream);
+        // Add particle streams
+        sim.AddParticleStream(totalParticlesPerStream, StreamSpeed,
+            initialVelocityStream, particleMassStream,
+            glm::vec2(0.0, 0.0));
+
+        sim.AddParticleStream(totalParticlesPerStream, StreamSpeed,
+            initialVelocityStream * glm::vec2(-1.0f, 1.0f),
+            particleMassStream,
+            glm::vec2(1996.0, 0.0));
+
+        sim.AddParticleStream(totalParticlesPerStream, StreamSpeed,
+            initialVelocityStream * glm::vec2(1.0f, -1.0f),
+            particleMassStream,
+            glm::vec2(1000.0, 0.0));
 
         // Enable blending
         GLCall(glEnable(GL_BLEND));
