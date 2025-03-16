@@ -135,7 +135,7 @@ int main(void)
                 
         int rows = 82;
         int cols = 85;
-        const glm::vec2 spacing = glm::vec2(0.0f, 0.0f);
+        const Vec2 spacing = { 0.0, 0.0 };
         const float particleMassGrid = 1.0f;
         const bool withInitialVelocityGrid = true;
 
@@ -144,7 +144,9 @@ int main(void)
         const unsigned int totalParticlesPerStream = 2900; // (limit with 1 substep is 9000 and without energy loss)
         const float StreamSpeed = 150.0f;                  // Particle spawn rate
         const float particleMassStream = 1.0f;
-        const glm::vec2 initialVelocityStream = glm::vec2(100.0, -100.0);
+        const Vec2 initialVelocityStream0 = {100.0, -100.0};
+        const Vec2 initialVelocityStream1 = { -100.0f, -100.0f };
+        const Vec2 initialVelocityStream2 = { 100.0, -100.0 };
         
         // ---------  BORDER --------- 
 
@@ -158,26 +160,28 @@ int main(void)
 
 
         // Define simulation boundaries centered on the origin
-        glm::vec2 bottomLeft(-simWidth / 2, -simHeight / 2);
-        glm::vec2 topRight(simWidth / 2, simHeight / 2);
+        Vec2 bottomLeft(-simWidth / 2, -simHeight / 2);
+        Vec2 topRight(simWidth / 2, simHeight / 2);
 
         // Create simulation system
         SimulationSystem sim(bottomLeft, topRight, particleRadius, WINDOW_WIDTH);
        
         // Add particle streams
         sim.AddParticleStream(totalParticlesPerStream, StreamSpeed,
-            initialVelocityStream, particleMassStream,
-            glm::vec2(0.0, 0.0));
+            initialVelocityStream0, particleMassStream,
+            { 0.0, 0.0 });
+
+        
 
         sim.AddParticleStream(totalParticlesPerStream, StreamSpeed,
-            initialVelocityStream * glm::vec2(-1.0f, 1.0f),
+            initialVelocityStream1,
             particleMassStream,
-            glm::vec2(1996.0, 0.0));
+            { 1996.0, 0.0 });
 
         sim.AddParticleStream(totalParticlesPerStream, StreamSpeed,
-            initialVelocityStream * glm::vec2(1.0f, -1.0f),
+            initialVelocityStream2,
             particleMassStream,
-            glm::vec2(1000.0, 0.0));
+            { 1000.0, 0.0 });
 
         // Enable blending
         GLCall(glEnable(GL_BLEND));

@@ -8,8 +8,8 @@
 
 // Structure for the particle instance data that will be sent to the GPU
 struct ParticleInstance {
-    glm::vec2 position;  // Particle position
-    glm::vec2 velocity;  // Particle velocity
+    Vec2 position;  // Particle position
+    Vec2 velocity;  // Particle velocity
     float size;          // Particle size
 };
 

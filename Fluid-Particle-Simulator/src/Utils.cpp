@@ -11,7 +11,7 @@ bool IsShaderPathOk(std::string shaderPath)
     return true;
 }
 
-void BoundsRenderer(glm::vec2 bottomLeft, glm::vec2 topRight, float borderWidth,
+void BoundsRenderer(Vec2 bottomLeft, Vec2 topRight, float borderWidth,
     glm::vec4 color,const glm::mat4& simulationViewMatrix)
 {
     // Static variables to persist between function calls
@@ -20,8 +20,8 @@ void BoundsRenderer(glm::vec2 bottomLeft, glm::vec2 topRight, float borderWidth,
     static VertexBuffer* borderVB = nullptr;
     static IndexBuffer* borderIB = nullptr;
     static bool initialized = false;
-    static glm::vec2 lastBottomLeft(0.0f, 0.0f);
-    static glm::vec2 lastTopRight(0.0f, 0.0f);
+    static Vec2 lastBottomLeft = { 0.0, 0.0 };
+    static Vec2 lastTopRight = { 0.0, 0.0 };
     static float lastBorderWidth = 0.0f;
     static float lastOffset = 0.0f;
 

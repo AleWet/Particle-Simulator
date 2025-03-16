@@ -2,7 +2,7 @@
 #include <iostream>
 #include <algorithm>
 
-SimulationSystem::SimulationSystem(const glm::vec2& bottomLeft, const glm::vec2& topRight, float particleRadius, unsigned int windowWidth)
+SimulationSystem::SimulationSystem(const Vec2& bottomLeft, const Vec2& topRight, float particleRadius, unsigned int windowWidth)
     : m_Bounds({ bottomLeft, topRight }), m_ParticleRadius(particleRadius),
     m_Zoom(1.0f), m_WindowWidth(windowWidth)
 {
@@ -12,16 +12,20 @@ SimulationSystem::SimulationSystem(const glm::vec2& bottomLeft, const glm::vec2&
 
 SimulationSystem::~SimulationSystem()
 {
-    // Destructor implementation (empty for now)
+    // Destructor implementation
+    if (m_SpatialGrid) {
+        delete m_SpatialGrid;
+        m_SpatialGrid = nullptr;
+    }
 }
 
-void SimulationSystem::AddParticle(const glm::vec2& position, const glm::vec2& velocity, float mass)
+void SimulationSystem::AddParticle(const Vec2& position, const Vec2& velocity, float mass)
 {
     Particle newParticle(position, velocity, mass);
     m_Particles.push_back(newParticle);
 }
 
-void SimulationSystem::AddParticleGrid(int rows, int cols, glm::vec2 spacing, bool withInitialVelocity, float mass)
+void SimulationSystem::AddParticleGrid(int rows, int cols, Vec2 spacing, bool withInitialVelocity, float mass)
 {
     // Reserve memory at the start
     m_Particles.reserve(m_Particles.size() + rows * cols);
@@ -34,20 +38,20 @@ void SimulationSystem::AddParticleGrid(int rows, int cols, glm::vec2 spacing, bo
     float stepX = 2.0f * m_ParticleRadius + spacing.x;
     float stepY = 2.0f * m_ParticleRadius + spacing.y;
 
-    glm::vec2 vel = glm::vec2(10.0f, -10.0f);
-    glm::vec2 nullVel = glm::vec2(0.0f, 0.0f);
+    Vec2 vel = { 10.0, -10.0 };
+    Vec2 nullVel = { 0.0, 0.0 };
 
     // Generate particles in a grid pattern
     for (int i = 0; i < rows; ++i) {
         for (int j = 0; j < cols; ++j) {
-            glm::vec2 position(
+            Vec2 position(
                 startX + j * stepX,          // Move right for each column
                 startY - i * stepY           // Move down for each row
             );
 
             if (withInitialVelocity)
                 AddParticle(position, vel, mass);
-            else 
+            else
                 AddParticle(position, nullVel, mass);
         }
     }
@@ -77,7 +81,10 @@ glm::mat4 SimulationSystem::GetProjMatrix() const
 glm::mat4 SimulationSystem::GetViewMatrix() const
 {
     // Calculate simulation center 
-    const glm::vec2 simulationCenter = (m_Bounds.topRight + m_Bounds.bottomLeft) * 0.5f;
+    Vec2 simulationCenter = {
+        (m_Bounds.topRight.x + m_Bounds.bottomLeft.x) * 0.5f,
+        (m_Bounds.topRight.y + m_Bounds.bottomLeft.y) * 0.5f
+    };
 
     // Create view transformation matrix
     glm::mat4 view = glm::mat4(1.0f);
@@ -92,15 +99,16 @@ glm::mat4 SimulationSystem::GetViewMatrix() const
     return view;
 }
 
-void SimulationSystem::AddParticleStream(int totalParticles, float spawnRate, const glm::vec2& velocity,
-    float mass, const glm::vec2& initialOffset)
+void SimulationSystem::AddParticleStream(int totalParticles, float spawnRate, const Vec2& velocity,
+    float mass, const Vec2& initialOffset)
 {
     ParticleStream newStream;
     newStream.isActive = true;
-    newStream.startPos = glm::vec2(
+    newStream.startPos =
+    {
         m_Bounds.bottomLeft.x + m_ParticleRadius + initialOffset.x,
         m_Bounds.topRight.y - m_ParticleRadius - initialOffset.y
-    );
+    };
     newStream.velocity = velocity;
     newStream.total = totalParticles;
     newStream.spawnInterval = 1.0f / spawnRate;
@@ -110,7 +118,6 @@ void SimulationSystem::AddParticleStream(int totalParticles, float spawnRate, co
 
     m_Streams.push_back(newStream);
 }
-
 void SimulationSystem::UpdateStreams(float deltaTime)
 {
     // Use iterator to allow removing completed streams if needed

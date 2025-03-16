@@ -1,14 +1,13 @@
 #pragma once
 #include <vector>
-#include <glm/glm.hpp>
-#include <unordered_map>
 #include <utility>
+#include "Vec2.h"
 
 class SpatialGrid {
 private:
     float m_CellSize;
-    glm::vec2 m_MinBound;
-    glm::vec2 m_MaxBound;
+    Vec2 m_MinBound;
+    Vec2 m_MaxBound;
     int m_GridWidth;
     int m_GridHeight;
     std::vector<std::vector<int>> m_Grid;
@@ -19,7 +18,7 @@ private:
     static constexpr std::pair<int, int> NEIGHBOR_OFFSETS[3] = { {1, 0}, {1, 1}, {0, 1} };
 
     // Directly compute 1D cell index from position
-    inline int GetCellIndex(const glm::vec2& position) const
+    inline int GetCellIndex(const Vec2& position) const
     {
         int x = static_cast<int>((position.x - m_MinBound.x) / m_CellSize);
         x = (x < 0) ? 0 : ((x >= m_GridWidth) ? m_GridWidth - 1 : x);
@@ -30,7 +29,7 @@ private:
 
 public:
 
-    SpatialGrid(const glm::vec2& minBound, const glm::vec2& maxBound, float cellSize, int particleCount)
+    SpatialGrid(const Vec2& minBound, const Vec2& maxBound, float cellSize, int particleCount)
         : m_CellSize(cellSize), m_MinBound(minBound), m_MaxBound(maxBound), m_ParticleCount(particleCount)
     {
         m_GridWidth = static_cast<int>((maxBound.x - minBound.x) / cellSize) + 1;
@@ -62,7 +61,7 @@ public:
         return (dx * dx + dy * dy) <= maxDistance * maxDistance;
     }
 
-    inline void InsertParticle(int particleIndex, const glm::vec2& position)
+    inline void InsertParticle(int particleIndex, const Vec2& position)
     {
         m_Grid[GetCellIndex(position)].push_back(particleIndex);
     }
@@ -72,31 +71,31 @@ public:
         m_CollisionPairs.clear();
         m_CollisionPairs.reserve(m_ParticleCount * 6);
 
-        for (int y = 0; y < m_GridHeight; ++y) 
+        for (int y = 0; y < m_GridHeight; ++y)
         {
-            for (int x = 0; x < m_GridWidth; ++x) 
+            for (int x = 0; x < m_GridWidth; ++x)
             {
                 const int cellIndex = x + y * m_GridWidth;
                 const auto& cellParticles = m_Grid[cellIndex];
                 if (cellParticles.empty()) continue;
 
                 const size_t cellSize = cellParticles.size();
-                for (size_t i = 0; i < cellSize; ++i) 
+                for (size_t i = 0; i < cellSize; ++i)
                 {
                     const int particleA = cellParticles[i];
 
                     // Intra-cell pairs
-                    for (size_t j = i + 1; j < cellSize; ++j) 
+                    for (size_t j = i + 1; j < cellSize; ++j)
                     {
                         const int particleB = cellParticles[j];
-                        if (AreParticlesCloseEnough(particleA, particleB, particles, maxDistance)) 
+                        if (AreParticlesCloseEnough(particleA, particleB, particles, maxDistance))
                         {
                             m_CollisionPairs.emplace_back(particleA, particleB);
                         }
                     }
 
                     // Neighbor cells
-                    for (const auto& offset : NEIGHBOR_OFFSETS) 
+                    for (const auto& offset : NEIGHBOR_OFFSETS)
                     {
                         const int neighborX = x + offset.first;
                         const int neighborY = y + offset.second;
@@ -106,9 +105,9 @@ public:
                         const auto& neighborParticles = m_Grid[neighborIndex];
                         if (neighborParticles.empty()) continue;
 
-                        for (const int particleB : neighborParticles) 
+                        for (const int particleB : neighborParticles)
                         {
-                            if (AreParticlesCloseEnough(particleA, particleB, particles, maxDistance)) 
+                            if (AreParticlesCloseEnough(particleA, particleB, particles, maxDistance))
                             {
                                 m_CollisionPairs.emplace_back(particleA, particleB);
                             }

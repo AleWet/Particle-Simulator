@@ -1,4 +1,5 @@
 #include "SolveCollision.h"
+#include <cmath>
 
 // Value between 0 (inelastic) and 1 (perfectly elastic)
 const float BOUNCINESS = 1.0f;
@@ -8,14 +9,14 @@ void SolveCollisionBorder(Particle& particleA,
     float particleRadius)
 {
     // Extract boundary coordinates
-    const glm::vec2& bottomLeft = bounds.bottomLeft;
-    const glm::vec2& topRight = bounds.topRight;
+    const Vec2& bottomLeft = bounds.bottomLeft;
+    const Vec2& topRight = bounds.topRight;
 
     // Calculate particle radius in simulation units
     float radius = static_cast<float>(particleRadius);
 
     // Store the original velocity for calculating reflection
-    glm::vec2 originalVelocity = particleA.velocity;
+    Vec2 originalVelocity = particleA.velocity;
     bool collided = false;
 
     // Horizontal bounds check
@@ -44,7 +45,6 @@ void SolveCollisionBorder(Particle& particleA,
 
     // Add energy loss during collision (coefficient of restitution)
     if (collided) {
-        
         //particleA.velocity *= 0.95f;
     }
 }

@@ -1,6 +1,6 @@
 #include "physics.h"
 #include "SpatialGrid.h"
-#include "Vec2.h"  
+ 
 
 const Vec2 G(0.0f, -20.80665f);
 const float AIR_RESISTANCE = 0.0f;
