@@ -8,9 +8,59 @@
 #include "Texture.h"
 #include "core/Time.h"
 #include "ParticleRenderer.h"
-#include "Utils.h"
+#include "Utils.h" // other includes are in Utils.h
 
-// other includes are in Utils.h
+
+// ================== SIMULATION PARAMETERS ============================
+
+// --------- GENERAL ---------
+
+// Arbitrary world units for simulation width, simulation heigth is based on the screen ratio
+const float simWidth = 2000.0f;
+
+// Set zoom
+const float zoom = 0.7f;
+
+// Toggle space partitioning
+bool useSpacePartitioning = true;
+
+// Number of substeps for simulation
+const unsigned int subSteps = 6;
+
+// Particle size (in simulation units)
+const float particleRadius = 6.0f;
+
+// --------- PARTICLE CREATION --------- 
+
+// --- GRID ---
+
+int rows = 82;
+int cols = 85;
+const Vec2 spacing = { 0.0, 0.0 };
+const float particleMassGrid = 1.0f;
+const bool withInitialVelocityGrid = true;
+
+// --- STREAM ---
+
+const unsigned int totalParticlesPerStream = 1000; // (max with 1 substep and without energy loss is 9000) 
+                                                   // (max with 2 substeps and without energy loss is 7200)
+                                                   // (max with 3 substeps and without energy loss is 6000)
+                                                   // (max with 6 substeps and without energy loss is 3000)
+const float StreamSpeed = 150.0f;                  // Particle spawn rate
+const float particleMassStream = 1.0f;
+const Vec2 initialVelocityStream0 = { 100.0, -100.0 };
+const Vec2 initialVelocityStream1 = { -100.0f, -100.0f };
+const Vec2 initialVelocityStream2 = { 100.0, -100.0 };
+
+// ---------  BORDER --------- 
+
+// Set border rendering parameters
+glm::vec4 simBorderColor(1.0f, 1.0f, 1.0f, 0.5f); // White
+glm::vec4 gridBorderColor(0.0f, 1.0f, 0.0f, 0.5f); // Green
+float borderWidth = 2.0f;
+
+// =======================================================================
+
 
 
 // Updates the window title with formatted performance metrics
@@ -101,63 +151,13 @@ int main(void)
     GLCall(glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT));
 
     { // Additional scope to avoid memory leaks
-
-
-        // ================== SIMULATION PARAMETERS ==================
-         
-        // --------- GENERAL --------- 
-            
-        // Set up simulation boundaries based on screen coordinates
-        // I'll use normalized device coordinates for simplicity, then scale with view matrix
+      
+      // Set up simulation boundaries based on screen coordinates
+        // Use normalized device coordinates for simplicity, then scale with view matrix
         const float aspectRatio = (float)WINDOW_WIDTH / (float)WINDOW_HEIGHT;
 
-        // Arbitrary world units for simulation width
-        const float simWidth = 2000.0f;
-        
         // Make simulation rectangle the same ratio of the screen for simplicity
-        const float simHeight = simWidth / aspectRatio; 
-
-        // Set zoom
-        const float zoom = 0.7f;
-
-        // Toggle space partitioning
-        bool useSpacePartitioning = true;
-
-        // Number of substeps for simulation
-        const unsigned int subSteps = 1;
-
-        // Particle size (in simulation units)
-        const float particleRadius = 4.0f;
-
-        // --------- PARTICLE CREATION --------- 
-              
-        // --- GRID ---
-                
-        int rows = 82;
-        int cols = 85;
-        const Vec2 spacing = { 0.0, 0.0 };
-        const float particleMassGrid = 1.0f;
-        const bool withInitialVelocityGrid = true;
-
-        // --- STREAM ---
-
-        const unsigned int totalParticlesPerStream = 2900; // (limit with 1 substep is 9000 and without energy loss)
-        const float StreamSpeed = 150.0f;                  // Particle spawn rate
-        const float particleMassStream = 1.0f;
-        const Vec2 initialVelocityStream0 = {100.0, -100.0};
-        const Vec2 initialVelocityStream1 = { -100.0f, -100.0f };
-        const Vec2 initialVelocityStream2 = { 100.0, -100.0 };
-        
-        // ---------  BORDER --------- 
-
-        // Set border rendering parameters
-        glm::vec4 simBorderColor(1.0f, 1.0f, 1.0f, 0.5f); // White
-        glm::vec4 gridBorderColor(0.0f, 1.0f, 0.0f, 0.5f); // Green
-        float borderWidth = 2.0f;
-
-        // =========================================================
-
-
+        const float simHeight = simWidth / aspectRatio;
 
         // Define simulation boundaries centered on the origin
         Vec2 bottomLeft(-simWidth / 2, -simHeight / 2);

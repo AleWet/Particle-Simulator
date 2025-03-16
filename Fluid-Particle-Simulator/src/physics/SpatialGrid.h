@@ -27,8 +27,19 @@ private:
         return x + y * m_GridWidth;
     }
 
-public:
+    // Avoid having to store useless info about potential pairs
+    inline bool AreParticlesCloseEnoughSq(const Vec2& posA, const Vec2& posB, float maxDistanceSq) const
+    {
+        const float dx = posA.x - posB.x;
+        const float dx2 = dx * dx;
+        if (dx2 > maxDistanceSq) return false;
 
+        const float dy = posA.y - posB.y;
+        const float dy2 = dy * dy;
+        return (dx2 + dy2) <= maxDistanceSq && dy2 <= maxDistanceSq;
+    }
+
+public:
     SpatialGrid(const Vec2& minBound, const Vec2& maxBound, float cellSize, int particleCount)
         : m_CellSize(cellSize), m_MinBound(minBound), m_MaxBound(maxBound), m_ParticleCount(particleCount)
     {
@@ -66,36 +77,40 @@ public:
         m_Grid[GetCellIndex(position)].push_back(particleIndex);
     }
 
-    std::vector<std::pair<int, int>>& GetPotentialCollisionPairs(const std::vector<Particle>& particles, float maxDistance)
+    std::vector<std::pair<int, int>>& GetPotentialCollisionPairs(
+        const std::vector<Particle>& particles,
+        float maxDistance)
     {
         m_CollisionPairs.clear();
+        const float maxDistanceSq = maxDistance * maxDistance;
         m_CollisionPairs.reserve(m_ParticleCount * 6);
 
-        for (int y = 0; y < m_GridHeight; ++y)
+        for (int y = 0; y < m_GridHeight; ++y) 
         {
-            for (int x = 0; x < m_GridWidth; ++x)
+            for (int x = 0; x < m_GridWidth; ++x) 
             {
                 const int cellIndex = x + y * m_GridWidth;
                 const auto& cellParticles = m_Grid[cellIndex];
                 if (cellParticles.empty()) continue;
 
                 const size_t cellSize = cellParticles.size();
-                for (size_t i = 0; i < cellSize; ++i)
+                for (size_t i = 0; i < cellSize; ++i) 
                 {
                     const int particleA = cellParticles[i];
+                    const Vec2& posA = particles[particleA].position;
 
                     // Intra-cell pairs
-                    for (size_t j = i + 1; j < cellSize; ++j)
+                    for (size_t j = i + 1; j < cellSize; ++j) 
                     {
                         const int particleB = cellParticles[j];
-                        if (AreParticlesCloseEnough(particleA, particleB, particles, maxDistance))
+                        if (AreParticlesCloseEnoughSq(posA, particles[particleB].position, maxDistanceSq)) 
                         {
                             m_CollisionPairs.emplace_back(particleA, particleB);
                         }
                     }
 
                     // Neighbor cells
-                    for (const auto& offset : NEIGHBOR_OFFSETS)
+                    for (const auto& offset : NEIGHBOR_OFFSETS) 
                     {
                         const int neighborX = x + offset.first;
                         const int neighborY = y + offset.second;
@@ -105,9 +120,8 @@ public:
                         const auto& neighborParticles = m_Grid[neighborIndex];
                         if (neighborParticles.empty()) continue;
 
-                        for (const int particleB : neighborParticles)
-                        {
-                            if (AreParticlesCloseEnough(particleA, particleB, particles, maxDistance))
+                        for (const int particleB : neighborParticles) {
+                            if (AreParticlesCloseEnoughSq(posA, particles[particleB].position, maxDistanceSq)) 
                             {
                                 m_CollisionPairs.emplace_back(particleA, particleB);
                             }

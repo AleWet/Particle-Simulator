@@ -126,12 +126,14 @@ void ParticleRenderer::UpdateBuffers()
     }
 
     // Update instance data with particle positions and velocities
+    float particleRadius = m_Simulation.GetParticleRadius();
     for (size_t i = 0; i < particleCount; i++) {
         const Particle& particle = particles[i];
         m_InstanceData[i].position = particle.position;
         m_InstanceData[i].velocity = particle.velocity;
-        m_InstanceData[i].size = m_Simulation.GetParticleRadius();
+        m_InstanceData[i].size = particleRadius;
     }
+
 
     // Update buffer
     m_InstanceBuffer->Bind();
