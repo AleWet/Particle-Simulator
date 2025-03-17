@@ -1,18 +1,14 @@
-# Particle Simulator 
+# Particle Simulator With Euler Integration Method
 
 ## Overview
 This project is a physics-based particle simulator written in C++ using OpenGL. It was designed for physics testing and employs Euler's integration along with a naive space partitioning algorithm for simulation. The project is currently outdated, but contributions are welcome.
 
 ## Features
 - **Euler Integration** for physics calculations
-- **Naive Space Partitioning** for performance optimization
+- **Space Partitioning** for performance optimization
 - **Customizable Simulation Parameters** (set before compilation)
 - **GLFW & GLEW for OpenGL rendering**
-- **GLM for mathematical computations**
-
-## Future Objectives
-- real time simulation of up to **100.000 particles**
-- implement vertlet integration
+- **GLM for mathematical computations** (and custom math library)
 
 ## Dependencies
 The project requires the following libraries, all included in the `Dependencies` folder:
@@ -44,7 +40,7 @@ Before running the simulator, ensure the following settings are correctly config
 3. Build and run the project.
 
 ## Usage
-Simulation parameters must be set **before compilation** within the `main` function under **SIMULATION PARAMETERS**:
+Simulation parameters must be set **before compilation** within the `application.cpp` file under **SIMULATION PARAMETERS**:
 ```cpp
 // Set zoom
 float zoom = 0.7f;
@@ -63,8 +59,7 @@ bool withInitialVelocity = true;
 The parameters cannot be modified at runtime. Modify them in the source code and recompile to apply changes.
 
 ## Known Issues & Limitations
-- **Particle Overlap:** Particles do not exactly touch each other (offset by a few pixels).
-- **Performance Limit:** The simulation struggles with more than **2800 particles** (as of the 15/03/2025) due to performance constraints. 
+- **Performance Limit:** The simulation struggles with more than **3000 particles** (as of the 16/03/2025) with 6 substeps due to performance constraints.
 
 ## Contribution
 This project is open for contributions. Feel free to submit pull requests to improve performance, fix issues, or add features.
