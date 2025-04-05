@@ -63,11 +63,3 @@ The parameters cannot be modified at runtime. Modify them in the source code and
 
 ## Contribution
 This project is open for contributions. Feel free to submit pull requests to improve performance, fix issues, or add features.
-
-## License
-*TBD*
-
----
-
-If you have any questions or need help with setup, feel free to open an issue in the repository.
-
