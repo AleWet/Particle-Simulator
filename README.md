@@ -63,3 +63,6 @@ The parameters cannot be modified at runtime. Modify them in the source code and
 
 ## Contribution
 This project is open for contributions. Feel free to submit pull requests to improve performance, fix issues, or add features.
+
+## License
+This project is licensed under the [MIT License](LICENSE).
